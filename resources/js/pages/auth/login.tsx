@@ -24,19 +24,25 @@ export default function Login({
 }: LoginProps) {
     return (
         <AuthLayout
-            title="Log in to your account"
-            description="Enter your email and password below to log in"
+            title="Log in to IntelLedger"
+            description="Access your global finance command center and daily briefings."
         >
             <Head title="Log in" />
+
+            {status && (
+                <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/80 p-3 text-sm font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                    {status}
+                </div>
+            )}
 
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-4"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-6">
+                        <div className="grid gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email address</Label>
                                 <Input
@@ -88,20 +94,24 @@ export default function Login({
 
                             <Button
                                 type="submit"
-                                className="mt-4 w-full"
+                                className="mt-2 w-full"
                                 tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
                             >
                                 {processing && <Spinner />}
                                 Log in
-                            </Button>
+                                </Button>
                         </div>
 
                         {canRegister && (
                             <div className="text-center text-sm text-muted-foreground">
                                 Don't have an account?{' '}
-                                <TextLink href={register()} tabIndex={5}>
+                                <TextLink
+                                    href={register()}
+                                    tabIndex={5}
+                                    viewTransition
+                                >
                                     Sign up
                                 </TextLink>
                             </div>
@@ -109,12 +119,6 @@ export default function Login({
                     </>
                 )}
             </Form>
-
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
         </AuthLayout>
     );
 }

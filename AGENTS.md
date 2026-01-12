@@ -494,4 +494,31 @@ export default () => (
 | overflow-ellipsis | text-ellipsis |
 | decoration-slice | box-decoration-slice |
 | decoration-clone | box-decoration-clone |
+
+=== architecture and frontend standards ===
+
+## Architecture and Engineering Standards (IntelLedger)
+- Keep controllers thin. Prefer single-action controllers for discrete operations and resource controllers for CRUD.
+- Move business logic into Action/Service classes. Use repositories only when needed for multiple data sources or caching.
+- Always use Form Requests for validation (with custom messages). Never inline validation in controllers.
+- Use Policies for model authorization and Gates for non-model abilities. Avoid hard-coded role checks in controllers.
+- Prefer Eloquent and relationships; avoid DB:: except for truly complex queries.
+- Organize routes by domain in `routes/*.php` and keep `routes/web.php` minimal, with clear naming.
+- Use jobs and events for long-running work; implement `ShouldQueue` as needed.
+- Do not add new base folders without approval; keep module boundaries cohesive.
+
+## Frontend Architecture (Inertia + React)
+- Pages live in `resources/js/pages`. Layouts live in `resources/js/layouts`.
+- Shared UI primitives go in `resources/js/components/ui`. Shared domain components go in `resources/js/components`.
+- Use Inertia `<Form>` and Wayfinder helpers for navigation and form actions.
+- Prefer `<Link>` or `router.visit()` for navigation, not `<a>` tags, unless linking outside the app.
+- Extract repeated UI into components; keep props typed and focused.
+- Favor `gap-*` utilities over margins for spacing; keep dark mode parity for all new UI.
+- Accessibility is required: semantic elements, labels tied to inputs, and `aria-*` where needed.
+
+## Visual Language (Marketing and Auth Surfaces)
+- Typography: Space Grotesk for headings, IBM Plex Sans for body, IBM Plex Mono for eyebrow/meta.
+- Palette: slate base with emerald/teal accents; ensure light and dark mode parity.
+- Layout: layered gradient background with a subtle grid, glassy cards with borders and soft shadows.
+- Motion: gentle fade/slide on panels; use Inertia `viewTransition` for auth and marketing page transitions.
 </laravel-boost-guidelines>

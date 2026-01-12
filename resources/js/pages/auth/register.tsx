@@ -13,19 +13,19 @@ import AuthLayout from '@/layouts/auth-layout';
 export default function Register() {
     return (
         <AuthLayout
-            title="Create an account"
-            description="Enter your details below to create your account"
+            title="Create your IntelLedger account"
+            description="Unify your US and India financial picture in one secure workspace."
         >
             <Head title="Register" />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-4"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-6">
+                        <div className="grid gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
                                 <Input
@@ -92,7 +92,7 @@ export default function Register() {
 
                             <Button
                                 type="submit"
-                                className="mt-2 w-full"
+                                className="mt-1 w-full"
                                 tabIndex={5}
                                 data-test="register-user-button"
                             >
@@ -103,7 +103,11 @@ export default function Register() {
 
                         <div className="text-center text-sm text-muted-foreground">
                             Already have an account?{' '}
-                            <TextLink href={login()} tabIndex={6}>
+                            <TextLink
+                                href={login()}
+                                tabIndex={6}
+                                viewTransition
+                            >
                                 Log in
                             </TextLink>
                         </div>

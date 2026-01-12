@@ -2,13 +2,13 @@
 
 use Inertia\Testing\AssertableInertia as Assert;
 
-it('renders the landing page', function () {
-    $response = $this->get('/');
+it('renders the IntelLedger landing page', function () {
+    $response = $this->get(route('home'));
 
     $response->assertSuccessful();
 
     $response->assertInertia(fn (Assert $page) => $page
         ->component('welcome')
-        ->has('canRegister')
+        ->where('canRegister', fn ($value) => is_bool($value))
     );
 });
