@@ -495,7 +495,71 @@ export default () => (
 | decoration-slice | box-decoration-slice |
 | decoration-clone | box-decoration-clone |
 
+
 === architecture and frontend standards ===
+=== architecture and frontend standards ===
+
+## Architecture & Engineering Standards (IntelLedger)
+
+### Layering
+- Controllers are thin I/O adapters. No business logic in controllers.
+- Use Cases live in `app/Actions/*` (or `app/UseCases/*`): one class per user/business operation.
+- Domain services live in `app/Services/*`: reusable, deterministic operations (unit-testable).
+- Models are persistence + relationships; no workflows.
+
+### Validation & Authorization
+- Always use Form Requests for validation. No inline validation.
+- Use Policies for models and Gates for cross-cutting abilities. No role checks in controllers.
+
+### Data Integrity (Finance)
+- Money is stored as integers in minor units (cents/paise). Never floats.
+- Amounts are always `{amount, currency}` when multi-currency is possible.
+- Snapshot/signal computations must be reproducible: store inputs metadata + config version for any alert.
+- Jobs must be idempotent; re-running must not corrupt ledger state.
+
+### Persistence
+- Prefer Eloquent + relationships.
+- For complex reads, use Query/ReadModel classes (e.g., `app/ReadModels/*`) instead of dumping logic into controllers.
+- Repositories are only for multi-source persistence, caching layers, or clearly justified abstraction needs.
+- Prevent N+1 queries. Make all DB queries as optimal as possible.
+
+### Routing
+- Organize routes by domain in `routes/*.php`; keep `routes/web.php` minimal.
+- Use explicit route names; avoid ambiguous naming.
+
+### Async & Integration
+- Use jobs/events for ingestion, reconciliation, snapshotting, brief generation, and notifications.
+- Implement retries/backoff and dead-letter handling for external provider calls.
+- Provider clients live in `app/Integrations/*` and must support test fixtures.
+
+### Testing & Quality Gates
+- Unit tests for computations (signals, sizing, reconciliation).
+- Feature tests for HTTP boundaries.
+- Contract tests with recorded fixtures for external providers.
+- CI must run: tests, lint/format, and static analysis.
+
+## Frontend Architecture (Inertia + React)
+
+### Structure
+- Pages: `resources/js/pages`
+- Layouts: `resources/js/layouts`
+- UI primitives: `resources/js/components/ui`
+- Domain components: `resources/js/components`
+
+### Standards
+- Prefer TypeScript for all new React code (finance objects are not optional).
+- Use Inertia `useForm()` for forms; wrap with a local `<Form>` component only if standardized.
+- Navigation uses Inertia `<Link>` / `router.visit()`; `<a>` only for external links.
+- Extract repeated UI into components; keep props minimal and explicit.
+- Prefer `gap-*` for spacing; avoid margin stacking.
+- Accessibility required: semantic elements, labels, keyboard states, and `aria-*` as needed.
+- Dark mode parity is required for any new UI.
+
+## Visual Language (Marketing + Auth Surfaces)
+- Typography: Space Grotesk (headings), IBM Plex Sans (body), IBM Plex Mono (meta).
+- Palette: slate base + emerald/teal accent; strict light/dark parity.
+- Layout: subtle grid + layered gradient background; glassy cards with borders and soft shadows.
+- Motion: gentle fade/slide; use Inertia view transitions where supported.
 
 ## Architecture and Engineering Standards (IntelLedger)
 - Keep controllers thin. Prefer single-action controllers for discrete operations and resource controllers for CRUD.
@@ -516,9 +580,4 @@ export default () => (
 - Favor `gap-*` utilities over margins for spacing; keep dark mode parity for all new UI.
 - Accessibility is required: semantic elements, labels tied to inputs, and `aria-*` where needed.
 
-## Visual Language (Marketing and Auth Surfaces)
-- Typography: Space Grotesk for headings, IBM Plex Sans for body, IBM Plex Mono for eyebrow/meta.
-- Palette: slate base with emerald/teal accents; ensure light and dark mode parity.
-- Layout: layered gradient background with a subtle grid, glassy cards with borders and soft shadows.
-- Motion: gentle fade/slide on panels; use Inertia `viewTransition` for auth and marketing page transitions.
 </laravel-boost-guidelines>
