@@ -262,6 +262,7 @@ Wayfinder generates TypeScript functions for Laravel routes. Import from `@/acti
 - CRITICAL: ALWAYS use `search-docs` tool for version-specific Pest documentation and updated code examples.
 - IMPORTANT: Activate `pest-testing` every time you're working with a Pest or testing-related task.
 
+
 === architecture and frontend standards ===
 
 ## Architecture & Engineering Standards (IntelLedger)
@@ -344,6 +345,5 @@ Wayfinder generates TypeScript functions for Laravel routes. Import from `@/acti
 - Extract repeated UI into components; keep props typed and focused.
 - Favor `gap-*` utilities over margins for spacing; keep dark mode parity for all new UI.
 - Accessibility is required: semantic elements, labels tied to inputs, and `aria-*` where needed.
-
 
 </laravel-boost-guidelines>
