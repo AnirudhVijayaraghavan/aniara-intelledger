@@ -2,9 +2,12 @@
     "agents": [
         "codex"
     ],
-    "editors": [
-        "codex",
-        "vscode"
-    ],
-    "guidelines": []
+    "guidelines": true,
+    "herd_mcp": false,
+    "mcp": true,
+    "sail": false,
+    "skills": [
+        "wayfinder-development",
+        "pest-testing"
+    ]
 }

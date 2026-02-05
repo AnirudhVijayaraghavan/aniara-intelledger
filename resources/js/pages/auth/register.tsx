@@ -1,7 +1,4 @@
-import { login } from '@/routes';
-import { store } from '@/routes/register';
 import { Form, Head } from '@inertiajs/react';
-
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -9,23 +6,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
+import { login } from '@/routes';
+import { store } from '@/routes/register';
 
 export default function Register() {
     return (
         <AuthLayout
-            title="Create your IntelLedger account"
-            description="Unify your US and India financial picture in one secure workspace."
+            title="Create an account"
+            description="Enter your details below to create your account"
         >
             <Head title="Register" />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
-                className="flex flex-col gap-4"
+                className="flex flex-col gap-6"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-4">
+                        <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
                                 <Input
@@ -92,7 +91,7 @@ export default function Register() {
 
                             <Button
                                 type="submit"
-                                className="mt-1 w-full"
+                                className="mt-2 w-full"
                                 tabIndex={5}
                                 data-test="register-user-button"
                             >
@@ -103,11 +102,7 @@ export default function Register() {
 
                         <div className="text-center text-sm text-muted-foreground">
                             Already have an account?{' '}
-                            <TextLink
-                                href={login()}
-                                tabIndex={6}
-                                viewTransition
-                            >
+                            <TextLink href={login()} tabIndex={6}>
                                 Log in
                             </TextLink>
                         </div>

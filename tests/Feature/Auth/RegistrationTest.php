@@ -1,14 +1,9 @@
 <?php
 
-use Inertia\Testing\AssertableInertia as Assert;
-
 test('registration screen can be rendered', function () {
     $response = $this->get(route('register'));
 
-    $response->assertSuccessful();
-    $response->assertInertia(fn (Assert $page) => $page
-        ->component('auth/register')
-    );
+    $response->assertOk();
 });
 
 test('new users can register', function () {

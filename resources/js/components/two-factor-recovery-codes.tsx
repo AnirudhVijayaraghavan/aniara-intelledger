@@ -1,3 +1,6 @@
+import { Form } from '@inertiajs/react';
+import { Eye, EyeOff, LockKeyhole, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -7,22 +10,19 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { regenerateRecoveryCodes } from '@/routes/two-factor';
-import { Form } from '@inertiajs/react';
-import { Eye, EyeOff, LockKeyhole, RefreshCw } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import AlertError from './alert-error';
 
-interface TwoFactorRecoveryCodesProps {
+type Props = {
     recoveryCodesList: string[];
     fetchRecoveryCodes: () => Promise<void>;
     errors: string[];
-}
+};
 
 export default function TwoFactorRecoveryCodes({
     recoveryCodesList,
     fetchRecoveryCodes,
     errors,
-}: TwoFactorRecoveryCodesProps) {
+}: Props) {
     const [codesAreVisible, setCodesAreVisible] = useState<boolean>(false);
     const codesSectionRef = useRef<HTMLDivElement | null>(null);
     const canRegenerateCodes = recoveryCodesList.length > 0 && codesAreVisible;
@@ -53,8 +53,8 @@ export default function TwoFactorRecoveryCodes({
     const RecoveryCodeIconComponent = codesAreVisible ? EyeOff : Eye;
 
     return (
-        <Card className="rounded-2xl border border-slate-200/70 bg-white/80 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.45)] backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/70">
-            <CardHeader className="space-y-1 pb-2">
+        <Card>
+            <CardHeader>
                 <CardTitle className="flex gap-3">
                     <LockKeyhole className="size-4" aria-hidden="true" />
                     2FA Recovery Codes
@@ -64,7 +64,7 @@ export default function TwoFactorRecoveryCodes({
                     device. Store them in a secure password manager.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent>
                 <div className="flex flex-col gap-3 select-none sm:flex-row sm:items-center sm:justify-between">
                     <Button
                         onClick={toggleCodesVisibility}
@@ -110,7 +110,7 @@ export default function TwoFactorRecoveryCodes({
                             <>
                                 <div
                                     ref={codesSectionRef}
-                                    className="grid gap-1 rounded-xl border border-slate-200/70 bg-slate-50/80 p-4 font-mono text-sm dark:border-slate-800/70 dark:bg-slate-950/60"
+                                    className="grid gap-1 rounded-lg bg-muted p-4 font-mono text-sm"
                                     role="list"
                                     aria-label="Recovery codes"
                                 >

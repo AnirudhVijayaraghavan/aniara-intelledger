@@ -1,16 +1,16 @@
-import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
-import InputError from '@/components/input-error';
-import AppLayout from '@/layouts/app-layout';
-import SettingsLayout from '@/layouts/settings/layout';
-import { type BreadcrumbItem } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Form, Head } from '@inertiajs/react';
 import { useRef } from 'react';
-
+import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
+import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import AppLayout from '@/layouts/app-layout';
+import SettingsLayout from '@/layouts/settings/layout';
 import { edit } from '@/routes/user-password';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -30,13 +30,12 @@ export default function Password() {
             <h1 className="sr-only">Password Settings</h1>
 
             <SettingsLayout>
-                <section className="space-y-4 rounded-3xl border border-slate-200/70 bg-white/80 p-5 shadow-[0_24px_60px_-50px_rgba(15,23,42,0.5)] backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/70">
-                    <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-[0.32em] text-emerald-600/80 dark:text-emerald-300/80">
-                            Security
-                        </p>
-                        <h2 className="sr-only">Update password</h2>
-                    </div>
+                <div className="space-y-6">
+                    <Heading
+                        variant="small"
+                        title="Update password"
+                        description="Ensure your account is using a long, random password to stay secure"
+                    />
 
                     <Form
                         {...PasswordController.update.form()}
@@ -58,7 +57,7 @@ export default function Password() {
                                 currentPasswordInput.current?.focus();
                             }
                         }}
-                        className="space-y-4"
+                        className="space-y-6"
                     >
                         {({ errors, processing, recentlySuccessful }) => (
                             <>
@@ -72,7 +71,7 @@ export default function Password() {
                                         ref={currentPasswordInput}
                                         name="current_password"
                                         type="password"
-                                        className="block w-full bg-white/80 dark:bg-slate-950/60"
+                                        className="mt-1 block w-full"
                                         autoComplete="current-password"
                                         placeholder="Current password"
                                     />
@@ -92,7 +91,7 @@ export default function Password() {
                                         ref={passwordInput}
                                         name="password"
                                         type="password"
-                                        className="block w-full bg-white/80 dark:bg-slate-950/60"
+                                        className="mt-1 block w-full"
                                         autoComplete="new-password"
                                         placeholder="New password"
                                     />
@@ -109,7 +108,7 @@ export default function Password() {
                                         id="password_confirmation"
                                         name="password_confirmation"
                                         type="password"
-                                        className="block w-full bg-white/80 dark:bg-slate-950/60"
+                                        className="mt-1 block w-full"
                                         autoComplete="new-password"
                                         placeholder="Confirm password"
                                     />
@@ -134,7 +133,7 @@ export default function Password() {
                                         leave="transition ease-in-out"
                                         leaveTo="opacity-0"
                                     >
-                                        <p className="text-sm text-emerald-600 dark:text-emerald-300">
+                                        <p className="text-sm text-neutral-600">
                                             Saved
                                         </p>
                                     </Transition>
@@ -142,7 +141,7 @@ export default function Password() {
                             </>
                         )}
                     </Form>
-                </section>
+                </div>
             </SettingsLayout>
         </AppLayout>
     );
