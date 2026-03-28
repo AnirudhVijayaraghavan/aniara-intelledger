@@ -6,9 +6,10 @@ import { useAppearance } from '@/hooks/use-appearance';
 import { cn } from '@/lib/utils';
 
 export default function AppearanceToggleTab({
+    compact = false,
     className = '',
     ...props
-}: HTMLAttributes<HTMLDivElement>) {
+}: HTMLAttributes<HTMLDivElement> & { compact?: boolean }) {
     const { appearance, updateAppearance } = useAppearance();
 
     const tabs: { value: Appearance; icon: LucideIcon; label: string }[] = [
@@ -20,7 +21,7 @@ export default function AppearanceToggleTab({
     return (
         <div
             className={cn(
-                'inline-flex gap-1 rounded-lg bg-neutral-100 p-1 dark:bg-neutral-800',
+                'inline-flex gap-1 rounded-xl border border-intel-line bg-intel-surface-muted p-1',
                 className,
             )}
             {...props}
@@ -30,14 +31,20 @@ export default function AppearanceToggleTab({
                     key={value}
                     onClick={() => updateAppearance(value)}
                     className={cn(
-                        'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
+                        compact
+                            ? 'flex items-center rounded-lg px-2.5 py-2 transition-colors'
+                            : 'flex items-center rounded-lg px-3.5 py-1.5 transition-colors',
                         appearance === value
-                            ? 'bg-white shadow-xs dark:bg-neutral-700 dark:text-neutral-100'
-                            : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60',
+                            ? 'bg-background text-foreground shadow-xs'
+                            : 'text-intel-text-muted hover:bg-intel-mint-soft hover:text-foreground',
                     )}
+                    aria-label={label}
+                    title={label}
                 >
-                    <Icon className="-ml-1 h-4 w-4" />
-                    <span className="ml-1.5 text-sm">{label}</span>
+                    <Icon className={cn('h-4 w-4', !compact && '-ml-1')} />
+                    {!compact && (
+                        <span className="ml-1.5 text-sm">{label}</span>
+                    )}
                 </button>
             ))}
         </div>

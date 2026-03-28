@@ -5,16 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import AuthLayout from '@/layouts/auth-layout';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
 export default function Register() {
     return (
-        <AuthLayout
-            title="Create an account"
-            description="Enter your details below to create your account"
-        >
+        <>
             <Head title="Register" />
             <Form
                 {...store.form()}
@@ -102,7 +98,7 @@ export default function Register() {
                             <TextLink
                                 href={login()}
                                 tabIndex={6}
-                                className="text-primary"
+                                className="text-[#2ec4b6] decoration-[#2ec4b6]/40 hover:text-[#0f1f1e] dark:hover:text-white"
                             >
                                 Log in
                             </TextLink>
@@ -110,6 +106,11 @@ export default function Register() {
                     </>
                 )}
             </Form>
-        </AuthLayout>
+        </>
     );
 }
+
+Register.layout = {
+    title: 'Create an account',
+    description: 'Enter your details below to create your account',
+};

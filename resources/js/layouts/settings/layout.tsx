@@ -7,8 +7,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
-import { show } from '@/routes/two-factor';
-import { edit as editPassword } from '@/routes/user-password';
+import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
@@ -18,13 +17,8 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
     {
-        title: 'Password',
-        href: editPassword(),
-        icon: null,
-    },
-    {
-        title: 'Two-Factor Auth',
-        href: show(),
+        title: 'Security',
+        href: editSecurity(),
         icon: null,
     },
     {
@@ -35,12 +29,7 @@ const sidebarNavItems: NavItem[] = [
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
-    const { isCurrentUrl } = useCurrentUrl();
-
-    // When server-side rendering, we only render the layout on the client...
-    if (typeof window === 'undefined') {
-        return null;
-    }
+    const { isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
         <div className="px-4 py-6">
@@ -62,7 +51,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                 variant="ghost"
                                 asChild
                                 className={cn('w-full justify-start', {
-                                    'bg-muted': isCurrentUrl(item.href),
+                                    'bg-muted': isCurrentOrParentUrl(item.href),
                                 })}
                             >
                                 <Link href={item.href}>

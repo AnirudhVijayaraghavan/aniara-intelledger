@@ -6,7 +6,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
@@ -23,10 +22,7 @@ export default function Login({
     canRegister,
 }: Props) {
     return (
-        <AuthLayout
-            title="Log in to your account"
-            description="Enter your email and password below to log in"
-        >
+        <>
             <Head title="Log in" />
 
             <Form
@@ -58,7 +54,7 @@ export default function Login({
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
-                                            className="ml-auto text-sm text-primary"
+                                            className="ml-auto text-sm text-[#2ec4b6] decoration-[#2ec4b6]/40 hover:text-[#0f1f1e] dark:hover:text-white"
                                             tabIndex={5}
                                         >
                                             Forgot password?
@@ -82,6 +78,7 @@ export default function Login({
                                     id="remember"
                                     name="remember"
                                     tabIndex={3}
+                                    className="border-[#2ec4b6]/50 data-[state=checked]:border-[#2ec4b6] data-[state=checked]:bg-[#2ec4b6] data-[state=checked]:text-white"
                                 />
                                 <Label htmlFor="remember">Remember me</Label>
                             </div>
@@ -104,7 +101,7 @@ export default function Login({
                                 <TextLink
                                     href={register()}
                                     tabIndex={5}
-                                    className="text-primary"
+                                    className="text-[#2ec4b6] decoration-[#2ec4b6]/40 hover:text-[#0f1f1e] dark:hover:text-white"
                                 >
                                     Sign up
                                 </TextLink>
@@ -115,10 +112,15 @@ export default function Login({
             </Form>
 
             {status && (
-                <div className="mb-4 text-center text-sm font-medium text-primary">
+                <div className="mb-4 text-center text-sm font-medium text-[#2ec4b6]">
                     {status}
                 </div>
             )}
-        </AuthLayout>
+        </>
     );
 }
+
+Login.layout = {
+    title: 'Log in to your account',
+    description: 'Enter your email and password below to log in',
+};

@@ -1,5 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Menu, Moon, Search, Sun } from 'lucide-react';
+import { LayoutGrid, Menu, Search } from 'lucide-react';
+import AppLogo from '@/components/app-logo';
+import AppLogoIcon from '@/components/app-logo-icon';
+import { AppearanceToggle } from '@/components/appearance-toggle';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -22,14 +25,11 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { UserMenuContent } from '@/components/user-menu-content';
-import { useAppearance } from '@/hooks/use-appearance';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
-import type { BreadcrumbItem, NavItem, SharedData } from '@/types';
-import AppLogo from './app-logo';
-import AppLogoIcon from './app-logo-icon';
+import type { BreadcrumbItem, NavItem } from '@/types';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
@@ -47,12 +47,11 @@ const activeItemStyles =
     'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
 export function AppHeader({ breadcrumbs = [] }: Props) {
-    const page = usePage<SharedData>();
+    const page = usePage();
     const { auth } = page.props;
     const getInitials = useInitials();
     const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
-    const { resolvedAppearance, updateAppearance } = useAppearance();
-    const isDark = resolvedAppearance === 'dark';
+
     return (
         <>
             <div className="border-b border-sidebar-border/80">
@@ -74,7 +73,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                 className="flex h-full w-64 flex-col items-stretch justify-between bg-sidebar"
                             >
                                 <SheetTitle className="sr-only">
-                                    Navigation Menu
+                                    Navigation menu
                                 </SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
                                     <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
@@ -96,6 +95,9 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                             ))}
                                         </div>
 
+                                        <div className="flex flex-col space-y-4">
+                                            <AppearanceToggle />
+                                        </div>
                                     </div>
                                 </div>
                             </SheetContent>
@@ -153,35 +155,9 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                             >
                                 <Search className="!size-5 opacity-80 group-hover:opacity-100" />
                             </Button>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                    updateAppearance(isDark ? 'light' : 'dark')
-                                }
-                                className="group h-9 w-9 cursor-pointer"
-                                aria-label="Toggle color mode"
-                            >
-                                <span className="relative flex h-5 w-5 items-center justify-center">
-                                    <Sun
-                                        className={cn(
-                                            'absolute h-5 w-5 transition-all duration-300',
-                                            isDark
-                                                ? 'scale-0 opacity-0'
-                                                : 'scale-100 opacity-100',
-                                        )}
-                                    />
-                                    <Moon
-                                        className={cn(
-                                            'absolute h-5 w-5 transition-all duration-300',
-                                            isDark
-                                                ? 'scale-100 opacity-100'
-                                                : 'scale-0 opacity-0',
-                                        )}
-                                    />
-                                </span>
-                            </Button>
+                            <div className="ml-1 hidden lg:flex">
+                                <AppearanceToggle />
+                            </div>
                         </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -191,17 +167,19 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                 >
                                     <Avatar className="size-8 overflow-hidden rounded-full">
                                         <AvatarImage
-                                            src={auth.user.avatar}
-                                            alt={auth.user.name}
+                                            src={auth.user?.avatar}
+                                            alt={auth.user?.name}
                                         />
                                         <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                            {getInitials(auth.user.name)}
+                                            {getInitials(auth.user?.name ?? '')}
                                         </AvatarFallback>
                                     </Avatar>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="end">
-                                <UserMenuContent user={auth.user} />
+                                {auth.user && (
+                                    <UserMenuContent user={auth.user} />
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
