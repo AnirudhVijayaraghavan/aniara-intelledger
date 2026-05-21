@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import AppLogoIcon from '@/components/app-logo-icon';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 
@@ -8,44 +9,88 @@ export default function AuthSimpleLayout({
     description,
 }: AuthLayoutProps) {
     return (
-        <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-[linear-gradient(145deg,rgba(203,243,240,0.68),rgba(255,255,255,0.98),rgba(255,191,105,0.14))] p-6 md:p-10 dark:bg-[linear-gradient(145deg,rgba(15,31,30,0.98),rgba(11,22,21,1),rgba(46,196,182,0.12))]">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(46,196,182,0.14),transparent_45%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(46,196,182,0.20),transparent_50%)]" />
+        <div className="grid min-h-svh bg-background text-foreground lg:grid-cols-[0.95fr_1fr]">
+            <aside className="hidden border-r border-border bg-muted lg:flex lg:flex-col lg:justify-between lg:p-10">
+                <Link href={home()} className="flex items-center gap-3">
+                    <span className="flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                        <AppLogoIcon className="size-7" />
+                    </span>
+                    <span className="text-lg font-semibold">
+                        Aniara Intelledger
+                    </span>
+                </Link>
 
-            <div className="relative w-full max-w-sm">
-                <div className="flex flex-col gap-8">
-                    <div className="flex flex-col items-center gap-5">
-                        <Link
-                            href={home()}
-                            className="flex flex-col items-center gap-3 font-medium"
-                        >
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#2ec4b6] bg-[#2ec4b6] text-sm font-semibold text-white shadow-lg shadow-[#2ec4b6]/30">
-                                IL
-                            </div>
-                            <div className="space-y-1 text-center">
-                                <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#5c7875] dark:text-[#95b9b5]">
-                                    IntelLedger
-                                </p>
-                                <p className="text-xs text-[#5c7875] dark:text-[#95b9b5]">
-                                    Investment intelligence ledger
-                                </p>
-                            </div>
-                        </Link>
-
-                        <div className="w-full rounded-[1.75rem] border border-[#0f1f1e]/10 bg-white/92 px-6 py-7 shadow-xl shadow-[#2ec4b6]/10 backdrop-blur dark:border-white/10 dark:bg-[#132725]/92">
-                            <div className="space-y-2 text-center">
-                                <h1 className="text-xl font-semibold text-[#0f1f1e] dark:text-white">
-                                    {title}
-                                </h1>
-                                <p className="text-center text-sm leading-6 text-[#5c7875] dark:text-[#95b9b5]">
-                                    {description}
-                                </p>
-                            </div>
-
-                            <div className="mt-6">{children}</div>
+                <div className="space-y-8">
+                    <div>
+                        <p className="text-sm text-muted-foreground">
+                            Ledger snapshot
+                        </p>
+                        <p className="mt-2 text-4xl font-semibold">$142,880</p>
+                    </div>
+                    <div className="grid grid-cols-8 items-end gap-2 rounded-md border border-border bg-card p-5">
+                        {[28, 40, 36, 52, 48, 66, 72, 84].map(
+                            (height, index) => (
+                                <div
+                                    key={index}
+                                    className="rounded-sm bg-primary"
+                                    style={{ height }}
+                                />
+                            ),
+                        )}
+                    </div>
+                    <div className="grid gap-3 text-sm">
+                        <div className="flex items-center justify-between rounded-md border border-border bg-card px-4 py-3">
+                            <span>Household access</span>
+                            <span className="font-semibold text-primary">
+                                Protected
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between rounded-md border border-border bg-card px-4 py-3">
+                            <span>Market watchlists</span>
+                            <span className="font-semibold text-accent-foreground">
+                                Ready
+                            </span>
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <p className="text-sm leading-6 text-muted-foreground">
+                    Private finance workspace for accounts, portfolios, budgets,
+                    and net worth.
+                </p>
+            </aside>
+
+            <section className="flex items-center justify-center p-6 md:p-10">
+                <div className="w-full max-w-sm animate-in duration-700 fade-in slide-in-from-bottom-3">
+                    <div className="flex flex-col gap-8">
+                        <div className="flex flex-col items-center gap-4 text-center lg:hidden">
+                            <Link
+                                href={home()}
+                                className="flex flex-col items-center gap-2 font-medium"
+                            >
+                                <div className="mb-1 flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                                    <AppLogoIcon className="size-7" />
+                                </div>
+                                <span className="sr-only">{title}</span>
+                            </Link>
+
+                            <div className="space-y-2">
+                                <p className="text-sm font-semibold">
+                                    Aniara Intelledger
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 text-center lg:text-left">
+                            <h1 className="text-2xl font-semibold">{title}</h1>
+                            <p className="text-sm leading-6 text-muted-foreground">
+                                {description}
+                            </p>
+                        </div>
+                    </div>
+                    {children}
+                </div>
+            </section>
         </div>
     );
 }

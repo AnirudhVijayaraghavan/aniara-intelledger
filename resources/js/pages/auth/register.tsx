@@ -1,5 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
+import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
-export default function Register() {
+type Props = {
+    passwordRules: string;
+};
+
+export default function Register({ passwordRules }: Props) {
     return (
         <>
             <Head title="Register" />
@@ -16,13 +21,15 @@ export default function Register() {
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
-                className="flex flex-col gap-5"
+                className="flex flex-col gap-6"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-4">
+                        <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                                <Label htmlFor="name" className="font-semibold">
+                                    Name
+                                </Label>
                                 <Input
                                     id="name"
                                     type="text"
@@ -32,12 +39,21 @@ export default function Register() {
                                     autoComplete="name"
                                     name="name"
                                     placeholder="Full name"
+                                    className="h-11 bg-card"
                                 />
-                                <InputError message={errors.name} />
+                                <InputError
+                                    message={errors.name}
+                                    className="mt-2"
+                                />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label
+                                    htmlFor="email"
+                                    className="font-semibold"
+                                >
+                                    Email address
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -46,36 +62,47 @@ export default function Register() {
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
+                                    className="h-11 bg-card"
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input
+                                <Label
+                                    htmlFor="password"
+                                    className="font-semibold"
+                                >
+                                    Password
+                                </Label>
+                                <PasswordInput
                                     id="password"
-                                    type="password"
                                     required
                                     tabIndex={3}
                                     autoComplete="new-password"
                                     name="password"
                                     placeholder="Password"
+                                    passwordrules={passwordRules}
+                                    className="h-11 bg-card"
                                 />
                                 <InputError message={errors.password} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
+                                <Label
+                                    htmlFor="password_confirmation"
+                                    className="font-semibold"
+                                >
                                     Confirm password
                                 </Label>
-                                <Input
+                                <PasswordInput
                                     id="password_confirmation"
-                                    type="password"
                                     required
                                     tabIndex={4}
                                     autoComplete="new-password"
                                     name="password_confirmation"
                                     placeholder="Confirm password"
+                                    passwordrules={passwordRules}
+                                    className="h-11 bg-card"
                                 />
                                 <InputError
                                     message={errors.password_confirmation}
@@ -84,7 +111,7 @@ export default function Register() {
 
                             <Button
                                 type="submit"
-                                className="mt-3 w-full bg-[#ff9f1c] text-[#0f1f1e] shadow-lg shadow-[#ff9f1c]/25 hover:bg-[#ffbf69]"
+                                className="mt-2 h-11 w-full bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
                                 tabIndex={5}
                                 data-test="register-user-button"
                             >
@@ -97,8 +124,8 @@ export default function Register() {
                             Already have an account?{' '}
                             <TextLink
                                 href={login()}
+                                className="text-primary"
                                 tabIndex={6}
-                                className="text-[#2ec4b6] decoration-[#2ec4b6]/40 hover:text-[#0f1f1e] dark:hover:text-white"
                             >
                                 Log in
                             </TextLink>
@@ -111,6 +138,7 @@ export default function Register() {
 }
 
 Register.layout = {
-    title: 'Create an account',
-    description: 'Enter your details below to create your account',
+    title: 'Create your ledger',
+    description:
+        'Set up a secure workspace for accounts, budgets, portfolios, and net worth.',
 };

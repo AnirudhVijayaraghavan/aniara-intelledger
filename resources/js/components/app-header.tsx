@@ -1,8 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import { LayoutGrid, Menu, Search } from 'lucide-react';
+import { AppearanceToggleButton } from '@/components/appearance-toggle-button';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
-import { AppearanceToggle } from '@/components/appearance-toggle';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -95,9 +95,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                             ))}
                                         </div>
 
-                                        <div className="flex flex-col space-y-4">
-                                            <AppearanceToggle />
-                                        </div>
+                                        <div />
                                     </div>
                                 </div>
                             </SheetContent>
@@ -155,10 +153,8 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                             >
                                 <Search className="!size-5 opacity-80 group-hover:opacity-100" />
                             </Button>
-                            <div className="ml-1 hidden lg:flex">
-                                <AppearanceToggle />
-                            </div>
                         </div>
+                        <AppearanceToggleButton />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button

@@ -1,5 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
+import PasskeyVerify from '@/components/passkey-verify';
+import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,28 +15,30 @@ import { request } from '@/routes/password';
 type Props = {
     status?: string;
     canResetPassword: boolean;
-    canRegister: boolean;
 };
 
-export default function Login({
-    status,
-    canResetPassword,
-    canRegister,
-}: Props) {
+export default function Login({ status, canResetPassword }: Props) {
     return (
         <>
             <Head title="Log in" />
 
+            <PasskeyVerify />
+
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
-                className="flex flex-col gap-5"
+                className="flex flex-col gap-6"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-5">
+                        <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label
+                                    htmlFor="email"
+                                    className="font-semibold"
+                                >
+                                    Email address
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -44,31 +48,37 @@ export default function Login({
                                     tabIndex={1}
                                     autoComplete="email"
                                     placeholder="email@example.com"
+                                    className="h-11 bg-card"
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
+                                    <Label
+                                        htmlFor="password"
+                                        className="font-semibold"
+                                    >
+                                        Password
+                                    </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
-                                            className="ml-auto text-sm text-[#2ec4b6] decoration-[#2ec4b6]/40 hover:text-[#0f1f1e] dark:hover:text-white"
+                                            className="ml-auto text-sm text-primary"
                                             tabIndex={5}
                                         >
                                             Forgot password?
                                         </TextLink>
                                     )}
                                 </div>
-                                <Input
+                                <PasswordInput
                                     id="password"
-                                    type="password"
                                     name="password"
                                     required
                                     tabIndex={2}
                                     autoComplete="current-password"
                                     placeholder="Password"
+                                    className="h-11 bg-card"
                                 />
                                 <InputError message={errors.password} />
                             </div>
@@ -78,14 +88,13 @@ export default function Login({
                                     id="remember"
                                     name="remember"
                                     tabIndex={3}
-                                    className="border-[#2ec4b6]/50 data-[state=checked]:border-[#2ec4b6] data-[state=checked]:bg-[#2ec4b6] data-[state=checked]:text-white"
                                 />
                                 <Label htmlFor="remember">Remember me</Label>
                             </div>
 
                             <Button
                                 type="submit"
-                                className="mt-3 w-full bg-[#ff9f1c] text-[#0f1f1e] shadow-lg shadow-[#ff9f1c]/25 hover:bg-[#ffbf69]"
+                                className="mt-4 h-11 w-full bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
                                 tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
@@ -95,24 +104,22 @@ export default function Login({
                             </Button>
                         </div>
 
-                        {canRegister && (
-                            <div className="text-center text-sm text-muted-foreground">
-                                Don't have an account?{' '}
-                                <TextLink
-                                    href={register()}
-                                    tabIndex={5}
-                                    className="text-[#2ec4b6] decoration-[#2ec4b6]/40 hover:text-[#0f1f1e] dark:hover:text-white"
-                                >
-                                    Sign up
-                                </TextLink>
-                            </div>
-                        )}
+                        <div className="text-center text-sm text-muted-foreground">
+                            Don't have an account?{' '}
+                            <TextLink
+                                href={register()}
+                                className="text-primary"
+                                tabIndex={5}
+                            >
+                                Sign up
+                            </TextLink>
+                        </div>
                     </>
                 )}
             </Form>
 
             {status && (
-                <div className="mb-4 text-center text-sm font-medium text-[#2ec4b6]">
+                <div className="mb-4 rounded-md border border-primary/30 bg-secondary px-4 py-3 text-center text-sm font-medium text-secondary-foreground">
                     {status}
                 </div>
             )}
@@ -121,6 +128,7 @@ export default function Login({
 }
 
 Login.layout = {
-    title: 'Log in to your account',
-    description: 'Enter your email and password below to log in',
+    title: 'Access your ledger',
+    description:
+        'Enter your credentials to continue to your private financial workspace.',
 };

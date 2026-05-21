@@ -2,24 +2,22 @@
 
 namespace Tests;
 
-use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Laravel\Fortify\Features;
 
 abstract class TestCase extends BaseTestCase
 {
-    public function createApplication(): Application
+    protected function setUp(): void
     {
-        /** @var Application $app */
-        $app = parent::createApplication();
+        parent::setUp();
 
-        // Keep tests isolated from the local application database, even when config is cached.
-        $app['config']->set('database.default', 'sqlite');
-        $app['config']->set('database.connections.sqlite.url', null);
-        $app['config']->set('database.connections.sqlite.database', ':memory:');
-        $app['config']->set('database.connections.sqlite.foreign_key_constraints', true);
-
-        return $app;
+        if (
+            ! app()->environment('testing')
+            || config('database.default') !== 'sqlite'
+            || config('database.connections.sqlite.database') !== ':memory:'
+        ) {
+            $this->fail('Tests must use the isolated sqlite in-memory database.');
+        }
     }
 
     protected function skipUnlessFortifyHas(string $feature, ?string $message = null): void

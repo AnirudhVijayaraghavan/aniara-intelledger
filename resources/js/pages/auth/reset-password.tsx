@@ -1,5 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
+import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,9 +10,10 @@ import { update } from '@/routes/password';
 type Props = {
     token: string;
     email: string;
+    passwordRules: string;
 };
 
-export default function ResetPassword({ token, email }: Props) {
+export default function ResetPassword({ token, email, passwordRules }: Props) {
     return (
         <>
             <Head title="Reset password" />
@@ -20,7 +22,6 @@ export default function ResetPassword({ token, email }: Props) {
                 {...update.form()}
                 transform={(data) => ({ ...data, token, email })}
                 resetOnSuccess={['password', 'password_confirmation']}
-                className="flex flex-col gap-5"
             >
                 {({ processing, errors }) => (
                     <div className="grid gap-6">
@@ -32,20 +33,25 @@ export default function ResetPassword({ token, email }: Props) {
                                 name="email"
                                 autoComplete="email"
                                 value={email}
+                                className="mt-1 block w-full"
                                 readOnly
                             />
-                            <InputError message={errors.email} />
+                            <InputError
+                                message={errors.email}
+                                className="mt-2"
+                            />
                         </div>
 
                         <div className="grid gap-2">
                             <Label htmlFor="password">Password</Label>
-                            <Input
+                            <PasswordInput
                                 id="password"
-                                type="password"
                                 name="password"
                                 autoComplete="new-password"
+                                className="mt-1 block w-full"
                                 autoFocus
                                 placeholder="Password"
+                                passwordrules={passwordRules}
                             />
                             <InputError message={errors.password} />
                         </div>
@@ -54,19 +60,23 @@ export default function ResetPassword({ token, email }: Props) {
                             <Label htmlFor="password_confirmation">
                                 Confirm password
                             </Label>
-                            <Input
+                            <PasswordInput
                                 id="password_confirmation"
-                                type="password"
                                 name="password_confirmation"
                                 autoComplete="new-password"
+                                className="mt-1 block w-full"
                                 placeholder="Confirm password"
+                                passwordrules={passwordRules}
                             />
-                            <InputError message={errors.password_confirmation} />
+                            <InputError
+                                message={errors.password_confirmation}
+                                className="mt-2"
+                            />
                         </div>
 
                         <Button
                             type="submit"
-                            className="mt-4 w-full bg-[#ff9f1c] text-[#0f1f1e] shadow-lg shadow-[#ff9f1c]/25 hover:bg-[#ffbf69]"
+                            className="mt-4 w-full"
                             disabled={processing}
                             data-test="reset-password-button"
                         >
