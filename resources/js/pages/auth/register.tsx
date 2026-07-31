@@ -27,9 +27,7 @@ export default function Register({ passwordRules }: Props) {
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="name" className="font-semibold">
-                                    Name
-                                </Label>
+                                <Label htmlFor="name">Name</Label>
                                 <Input
                                     id="name"
                                     type="text"
@@ -39,7 +37,6 @@ export default function Register({ passwordRules }: Props) {
                                     autoComplete="name"
                                     name="name"
                                     placeholder="Full name"
-                                    className="h-11 bg-card"
                                 />
                                 <InputError
                                     message={errors.name}
@@ -48,12 +45,7 @@ export default function Register({ passwordRules }: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label
-                                    htmlFor="email"
-                                    className="font-semibold"
-                                >
-                                    Email address
-                                </Label>
+                                <Label htmlFor="email">Email address</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -62,18 +54,12 @@ export default function Register({ passwordRules }: Props) {
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
-                                    className="h-11 bg-card"
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label
-                                    htmlFor="password"
-                                    className="font-semibold"
-                                >
-                                    Password
-                                </Label>
+                                <Label htmlFor="password">Password</Label>
                                 <PasswordInput
                                     id="password"
                                     required
@@ -82,16 +68,12 @@ export default function Register({ passwordRules }: Props) {
                                     name="password"
                                     placeholder="Password"
                                     passwordrules={passwordRules}
-                                    className="h-11 bg-card"
                                 />
                                 <InputError message={errors.password} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label
-                                    htmlFor="password_confirmation"
-                                    className="font-semibold"
-                                >
+                                <Label htmlFor="password_confirmation">
                                     Confirm password
                                 </Label>
                                 <PasswordInput
@@ -102,7 +84,6 @@ export default function Register({ passwordRules }: Props) {
                                     name="password_confirmation"
                                     placeholder="Confirm password"
                                     passwordrules={passwordRules}
-                                    className="h-11 bg-card"
                                 />
                                 <InputError
                                     message={errors.password_confirmation}
@@ -111,7 +92,7 @@ export default function Register({ passwordRules }: Props) {
 
                             <Button
                                 type="submit"
-                                className="mt-2 h-11 w-full bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
+                                className="mt-2 w-full"
                                 tabIndex={5}
                                 data-test="register-user-button"
                             >
@@ -122,11 +103,7 @@ export default function Register({ passwordRules }: Props) {
 
                         <div className="text-center text-sm text-muted-foreground">
                             Already have an account?{' '}
-                            <TextLink
-                                href={login()}
-                                className="text-primary"
-                                tabIndex={6}
-                            >
+                            <TextLink href={login()} tabIndex={6}>
                                 Log in
                             </TextLink>
                         </div>
@@ -138,7 +115,6 @@ export default function Register({ passwordRules }: Props) {
 }
 
 Register.layout = {
-    title: 'Create your ledger',
-    description:
-        'Set up a secure workspace for accounts, budgets, portfolios, and net worth.',
+    title: 'Create an account',
+    description: 'Enter your details below to create your account',
 };

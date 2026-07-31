@@ -7,15 +7,6 @@ import { bunny } from 'laravel-vite-plugin/fonts';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-    server: {
-        watch: {
-            ignored: [
-                '**/aniaraintelledger',
-                '**/database/*.sqlite',
-                '**/storage/**',
-            ],
-        },
-    },
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],

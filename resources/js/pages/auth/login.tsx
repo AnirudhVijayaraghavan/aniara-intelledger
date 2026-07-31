@@ -33,12 +33,7 @@ export default function Login({ status, canResetPassword }: Props) {
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label
-                                    htmlFor="email"
-                                    className="font-semibold"
-                                >
-                                    Email address
-                                </Label>
+                                <Label htmlFor="email">Email address</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -48,26 +43,20 @@ export default function Login({ status, canResetPassword }: Props) {
                                     tabIndex={1}
                                     autoComplete="email"
                                     placeholder="email@example.com"
-                                    className="h-11 bg-card"
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label
-                                        htmlFor="password"
-                                        className="font-semibold"
-                                    >
-                                        Password
-                                    </Label>
+                                    <Label htmlFor="password">Password</Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
-                                            className="ml-auto text-sm text-primary"
+                                            className="ml-auto text-sm"
                                             tabIndex={5}
                                         >
-                                            Forgot password?
+                                            Forgot your password?
                                         </TextLink>
                                     )}
                                 </div>
@@ -78,7 +67,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                     tabIndex={2}
                                     autoComplete="current-password"
                                     placeholder="Password"
-                                    className="h-11 bg-card"
                                 />
                                 <InputError message={errors.password} />
                             </div>
@@ -94,7 +82,7 @@ export default function Login({ status, canResetPassword }: Props) {
 
                             <Button
                                 type="submit"
-                                className="mt-4 h-11 w-full bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
+                                className="mt-4 w-full"
                                 tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
@@ -106,11 +94,7 @@ export default function Login({ status, canResetPassword }: Props) {
 
                         <div className="text-center text-sm text-muted-foreground">
                             Don't have an account?{' '}
-                            <TextLink
-                                href={register()}
-                                className="text-primary"
-                                tabIndex={5}
-                            >
+                            <TextLink href={register()} tabIndex={5}>
                                 Sign up
                             </TextLink>
                         </div>
@@ -119,7 +103,7 @@ export default function Login({ status, canResetPassword }: Props) {
             </Form>
 
             {status && (
-                <div className="mb-4 rounded-md border border-primary/30 bg-secondary px-4 py-3 text-center text-sm font-medium text-secondary-foreground">
+                <div className="mb-4 text-center text-sm font-medium text-green-600">
                     {status}
                 </div>
             )}
@@ -128,7 +112,6 @@ export default function Login({ status, canResetPassword }: Props) {
 }
 
 Login.layout = {
-    title: 'Access your ledger',
-    description:
-        'Enter your credentials to continue to your private financial workspace.',
+    title: 'Log in to your account',
+    description: 'Enter your email and password below to log in',
 };
