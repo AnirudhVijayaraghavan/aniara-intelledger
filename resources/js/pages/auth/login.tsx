@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import { ShieldCheck } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
@@ -104,6 +105,7 @@ export default function Login({ status, canResetPassword }: Props) {
 
             {status && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600">
+                    <ShieldCheck className="mr-2 inline size-4" />
                     {status}
                 </div>
             )}
@@ -113,5 +115,5 @@ export default function Login({ status, canResetPassword }: Props) {
 
 Login.layout = {
     title: 'Log in to your account',
-    description: 'Enter your email and password below to log in',
+    description: 'Access your consolidated financial ledger.',
 };
