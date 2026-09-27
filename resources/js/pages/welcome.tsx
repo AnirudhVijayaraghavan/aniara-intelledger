@@ -1,273 +1,237 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
+    ArrowDown,
     ArrowRight,
-    BarChart3,
+    BookOpen,
+    BrainCircuit,
+    ChartNoAxesCombined,
+    Compass,
     Landmark,
-    ShieldCheck,
-    WalletCards,
+    Wallet,
 } from 'lucide-react';
+import LedgerBrand from '@/components/ledger-brand';
+import LedgerPreview from '@/components/ledger-preview';
+import { Button } from '@/components/ui/button';
 import { dashboard, login, register } from '@/routes';
+import { index as teams } from '@/routes/teams';
+
+const capabilities = [
+    {
+        number: '01',
+        icon: BookOpen,
+        title: 'The everyday ledger',
+        detail: 'Expenses & budgets',
+        copy: 'Understand what comes in, what goes out, and what stays. Bring intention to everyday spending.',
+    },
+    {
+        number: '02',
+        icon: Landmark,
+        title: 'The complete picture',
+        detail: 'Accounts & net worth',
+        copy: 'See cash, assets, and liabilities in context. Follow the bigger story behind your balances.',
+    },
+    {
+        number: '03',
+        icon: ChartNoAxesCombined,
+        title: 'The long view',
+        detail: 'Investments & portfolios',
+        copy: 'Keep holdings, allocation, and performance in perspective. Know where your wealth is working.',
+    },
+    {
+        number: '04',
+        icon: BrainCircuit,
+        title: 'The considered decision',
+        detail: 'AI & robo-advisor planning',
+        copy: 'Explore a future of clearer insights and guided portfolio planning, with you in control of every decision.',
+    },
+];
 
 export default function Welcome() {
-    const { auth } = usePage().props;
+    const { auth, currentTeam } = usePage().props;
+    const entryUrl = auth.user
+        ? currentTeam
+            ? dashboard(currentTeam.slug)
+            : teams()
+        : register();
+    const entryLabel = auth.user ? 'Open workspace' : 'Create your account';
 
     return (
         <>
-            <Head title="A clearer financial ledger" />
-
-            <div className="min-h-screen bg-background text-foreground">
-                <header className="mx-auto flex w-full max-w-7xl items-center justify-between border-b border-border px-6 py-5 lg:px-8">
-                    <Link
-                        href={dashboard()}
-                        className="flex items-center gap-3"
-                    >
-                        <span className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                            <Landmark className="size-5" />
-                        </span>
-                        <span className="text-lg font-semibold">
-                            Aniara Intelledger
-                        </span>
-                    </Link>
-
-                    <nav className="flex items-center gap-3 text-sm">
-                        {auth.user ? (
-                            <Link
-                                href={dashboard()}
-                                className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            <Head title="Your financial operating system">
+                <meta
+                    name="description"
+                    content="Aniara Intelledger. A considered home for your financial life: everyday expenses, wealth, portfolios, and financial intelligence."
+                />
+            </Head>
+            <div className="ledger-public min-h-screen bg-background text-foreground">
+                <header className="border-b border-border bg-card">
+                    <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-5 px-6 py-6 lg:px-10">
+                        <LedgerBrand />
+                        <nav
+                            aria-label="Main navigation"
+                            className="flex items-center gap-3 sm:gap-6"
+                        >
+                            <a
+                                href="#platform"
+                                className="hidden text-sm text-muted-foreground hover:text-foreground sm:block"
                             >
-                                Open ledger <ArrowRight className="size-4" />
-                            </Link>
-                        ) : (
-                            <>
-                                <Link
-                                    href={login()}
-                                    className="hidden rounded-md px-3 py-2 font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground sm:inline-flex"
-                                >
-                                    Log in
-                                </Link>
-                                <Link
-                                    href={register()}
-                                    className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                                >
-                                    Create account{' '}
-                                    <ArrowRight className="size-4" />
-                                </Link>
-                            </>
-                        )}
-                    </nav>
-                </header>
-
-                <main className="mx-auto grid w-full max-w-7xl gap-12 px-6 py-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:px-8 lg:py-20">
-                    <section className="flex max-w-xl flex-col justify-center">
-                        <p className="mb-5 flex items-center gap-2 text-sm font-medium text-primary">
-                            <ShieldCheck className="size-4" />
-                            Your financial record, in one place
-                        </p>
-                        <h1 className="text-4xl leading-tight font-semibold text-balance sm:text-5xl">
-                            One ledger for your wealth across the U.S. and
-                            India.
-                        </h1>
-                        <p className="mt-6 max-w-lg text-lg leading-8 text-muted-foreground">
-                            Consolidate accounts, understand spending, follow
-                            markets, and make better-informed financial
-                            decisions from one calm operating surface.
-                        </p>
-                        <div className="mt-8 flex flex-wrap gap-3">
-                            <Link
-                                href={auth.user ? dashboard() : register()}
-                                className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                            >
-                                {auth.user
-                                    ? 'Open your ledger'
-                                    : 'Start your ledger'}
-                                <ArrowRight className="size-4" />
-                            </Link>
+                                The platform
+                            </a>
                             {!auth.user && (
                                 <Link
                                     href={login()}
-                                    className="inline-flex h-10 items-center rounded-md border border-border px-5 text-sm font-medium transition-colors hover:bg-secondary"
+                                    className="text-sm hover:underline"
                                 >
                                     Log in
                                 </Link>
                             )}
+                            <Button asChild>
+                                <Link href={entryUrl}>
+                                    {auth.user
+                                        ? 'Open workspace'
+                                        : 'Get started'}
+                                    <ArrowRight />
+                                </Link>
+                            </Button>
+                        </nav>
+                    </div>
+                </header>
+                <main>
+                    <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:px-10 lg:py-20">
+                        <div>
+                            <p className="mb-7 flex items-center gap-3 text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                                <span className="h-px w-8 bg-primary" /> A
+                                financial operating system
+                            </p>
+                            <h1 className="text-5xl leading-[1.08] sm:text-6xl">
+                                Your financial life.
+                                <br />
+                                <span className="italic">In full view.</span>
+                            </h1>
+                            <p className="mt-7 max-w-md text-lg leading-relaxed text-muted-foreground">
+                                A single, considered home for your money. From
+                                everyday expenses to lasting wealth, bring every
+                                part of your financial life into perspective.
+                            </p>
+                            <div className="mt-8 flex flex-wrap items-center gap-5">
+                                <Button size="lg" asChild className="h-12 px-6">
+                                    <Link href={entryUrl}>
+                                        {entryLabel}
+                                        <ArrowRight />
+                                    </Link>
+                                </Button>
+                                <a
+                                    href="#overview"
+                                    className="inline-flex items-center gap-2 text-sm underline-offset-4 hover:underline"
+                                >
+                                    Explore the ledger{' '}
+                                    <ArrowDown className="size-4" />
+                                </a>
+                            </div>
+                            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 border-t border-border pt-5 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-2">
+                                    <Wallet className="size-4" /> Everyday
+                                    clarity
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <Compass className="size-4" /> Long-term
+                                    perspective
+                                </span>
+                            </div>
                         </div>
-                        <div className="mt-10 grid gap-4 border-t border-border pt-6 sm:grid-cols-3">
-                            <Feature
-                                icon={Landmark}
-                                label="Wealth"
-                                detail="USD & INR"
-                            />
-                            <Feature
-                                icon={WalletCards}
-                                label="Spending"
-                                detail="Clear categories"
-                            />
-                            <Feature
-                                icon={BarChart3}
-                                label="Markets"
-                                detail="Watch with context"
-                            />
+                        <div
+                            id="overview"
+                            className="min-w-0 scroll-mt-6 rounded-md bg-secondary/35 p-4 sm:p-6"
+                        >
+                            <div className="mb-3 flex items-center justify-between gap-2 text-xs tracking-[0.1em] text-muted-foreground uppercase">
+                                <span>Inside your ledger</span>
+                                <span>Product preview / 01</span>
+                            </div>
+                            <LedgerPreview />
+                            <p className="mt-3 text-right text-xs text-muted-foreground">
+                                An illustrative workspace. No live accounts
+                                connected.
+                            </p>
                         </div>
                     </section>
-
-                    <LedgerSurface />
+                    <section
+                        id="platform"
+                        className="scroll-mt-6 border-y border-border bg-secondary/20"
+                    >
+                        <div className="mx-auto max-w-7xl px-6 py-12 lg:px-10">
+                            <div className="flex flex-wrap items-end justify-between gap-5 pb-8">
+                                <div>
+                                    <p className="mb-3 text-xs tracking-[0.16em] text-muted-foreground uppercase">
+                                        The platform we are building
+                                    </p>
+                                    <h2 className="text-3xl">
+                                        One place. Every financial dimension.
+                                    </h2>
+                                </div>
+                                <span className="rounded-sm bg-accent/40 px-3 py-1.5 text-xs text-accent-foreground">
+                                    Platform roadmap
+                                </span>
+                            </div>
+                            <div className="grid gap-8 border-t border-border pt-8 sm:grid-cols-2 lg:grid-cols-4">
+                                {capabilities.map(
+                                    ({
+                                        number,
+                                        icon: Icon,
+                                        title,
+                                        detail,
+                                        copy,
+                                    }) => (
+                                        <article key={number}>
+                                            <div className="mb-6 flex items-center justify-between">
+                                                <Icon
+                                                    className="size-6"
+                                                    strokeWidth={1.3}
+                                                />
+                                                <span className="text-xs text-muted-foreground">
+                                                    /{number}
+                                                </span>
+                                            </div>
+                                            <p className="mb-2 text-xs text-muted-foreground">
+                                                {detail}
+                                            </p>
+                                            <h3 className="text-xl">{title}</h3>
+                                            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                                                {copy}
+                                            </p>
+                                        </article>
+                                    ),
+                                )}
+                            </div>
+                        </div>
+                    </section>
+                    <section className="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-6 py-12 sm:flex-row sm:items-center lg:px-10">
+                        <div>
+                            <p className="mb-2 text-xs tracking-[0.16em] text-muted-foreground uppercase">
+                                A more intentional financial life
+                            </p>
+                            <h2 className="text-3xl">
+                                Start with a clearer perspective.
+                            </h2>
+                        </div>
+                        <Button asChild size="lg" className="w-fit">
+                            <Link href={entryUrl}>
+                                {entryLabel}
+                                <ArrowRight />
+                            </Link>
+                        </Button>
+                    </section>
                 </main>
-            </div>
-        </>
-    );
-}
-
-function Feature({
-    icon: Icon,
-    label,
-    detail,
-}: {
-    icon: typeof Landmark;
-    label: string;
-    detail: string;
-}) {
-    return (
-        <div className="flex items-center gap-3">
-            <span className="flex size-8 items-center justify-center rounded-md bg-secondary text-primary">
-                <Icon className="size-4" />
-            </span>
-            <span className="text-sm leading-5">
-                <span className="block font-medium">{label}</span>
-                <span className="block text-muted-foreground">{detail}</span>
-            </span>
-        </div>
-    );
-}
-
-function LedgerSurface() {
-    return (
-        <section className="overflow-hidden rounded-md border border-border bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2">
-            <div className="flex items-center justify-between border-b border-border bg-secondary/60 px-5 py-4">
-                <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                        CONSOLIDATED POSITION
-                    </p>
-                    <p className="mt-1 text-xl font-semibold">
-                        Household ledger
-                    </p>
-                </div>
-                <span className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground">
-                    Snapshot
-                </span>
-            </div>
-
-            <div className="grid gap-px bg-border sm:grid-cols-3">
-                <Metric
-                    label="Net worth"
-                    value="$248,420"
-                    change="+4.8% this year"
-                />
-                <Metric label="India holdings" value="₹18.6L" change="Synced" />
-                <Metric label="Cash runway" value="7.4 mo" change="On track" />
-            </div>
-
-            <div className="grid gap-6 p-5 sm:grid-cols-[1.1fr_0.9fr]">
-                <div>
-                    <div className="mb-4 flex items-center justify-between">
-                        <p className="text-sm font-medium">
-                            Allocation overview
-                        </p>
-                        <span className="text-xs text-muted-foreground">
-                            USD equivalent
+                <footer className="border-t border-border">
+                    <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-3 px-6 py-6 text-xs text-muted-foreground lg:px-10">
+                        <span>
+                            Aniara Intelledger · Clarity in every entry.
+                        </span>
+                        <span>
+                            Built for the everyday. Designed for the long term.
                         </span>
                     </div>
-                    <div className="flex h-28 items-end gap-2 border-b border-border pb-1">
-                        {[48, 68, 54, 82, 62, 92, 76, 100].map(
-                            (height, index) => (
-                                <span
-                                    key={height}
-                                    className={
-                                        index === 7
-                                            ? 'flex-1 rounded-t-sm bg-primary'
-                                            : 'flex-1 rounded-t-sm bg-secondary'
-                                    }
-                                    style={{ height: `${height}%` }}
-                                />
-                            ),
-                        )}
-                    </div>
-                    <div className="mt-3 flex justify-between text-xs text-muted-foreground">
-                        <span>Jan</span>
-                        <span>Apr</span>
-                        <span>Jul</span>
-                        <span>Today</span>
-                    </div>
-                </div>
-                <div className="border-t border-border pt-5 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-6">
-                    <p className="mb-3 text-sm font-medium">Watchlist</p>
-                    <div className="space-y-3">
-                        <WatchRow symbol="VTI" value="$286.14" change="+0.8%" />
-                        <WatchRow
-                            symbol="NIFTY 50"
-                            value="24,771"
-                            change="+0.4%"
-                        />
-                        <WatchRow
-                            symbol="USD / INR"
-                            value="₹83.42"
-                            change="Market"
-                            muted
-                        />
-                    </div>
-                </div>
+                </footer>
             </div>
-            <div className="flex items-center gap-2 border-t border-border bg-muted/50 px-5 py-3 text-xs text-muted-foreground">
-                <ShieldCheck className="size-4 text-primary" />
-                Designed for financial clarity, not automated trading.
-            </div>
-        </section>
-    );
-}
-
-function Metric({
-    label,
-    value,
-    change,
-}: {
-    label: string;
-    value: string;
-    change: string;
-}) {
-    return (
-        <div className="bg-card p-4">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
-            <p className="mt-1 text-xs text-primary">{change}</p>
-        </div>
-    );
-}
-
-function WatchRow({
-    symbol,
-    value,
-    change,
-    muted = false,
-}: {
-    symbol: string;
-    value: string;
-    change: string;
-    muted?: boolean;
-}) {
-    return (
-        <div className="flex items-center justify-between border-b border-border pb-2 last:border-0 last:pb-0">
-            <span className="text-sm font-medium">{symbol}</span>
-            <span className="text-right text-sm tabular-nums">
-                <span className="block font-medium">{value}</span>
-                <span
-                    className={
-                        muted
-                            ? 'text-xs text-muted-foreground'
-                            : 'text-xs text-primary'
-                    }
-                >
-                    {change}
-                </span>
-            </span>
-        </div>
+        </>
     );
 }

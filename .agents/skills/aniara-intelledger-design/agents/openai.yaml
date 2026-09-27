@@ -1,4 +1,0 @@
-interface:
-  display_name: "Aniara Intelledger Design"
-  short_description: "Build calm, trusted financial ledger UI"
-  default_prompt: "Use $aniara-intelledger-design to design a trusted financial ledger interface."

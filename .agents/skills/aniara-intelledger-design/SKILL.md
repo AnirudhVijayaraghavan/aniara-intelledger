@@ -9,6 +9,7 @@ Build every screen as a trusted private finance ledger: calm, precise, operation
 
 ## Use the existing theme
 
+- Inspect `resources/css/app.css` and existing shared components before interface work. Treat the palette and typography below as the intended design scheme; if the starter theme differs, align the shared theme when implementing the requested UI rather than scattering overrides across screens.
 - Prefer the semantic tokens in `resources/css/app.css`: `bg-background`, `text-foreground`, `bg-card`, `border-border`, `bg-primary`, `text-primary-foreground`, `bg-secondary`, `text-secondary-foreground`, `bg-accent`, `text-accent-foreground`, and `text-muted-foreground`.
 - The visual palette is teal (`#2ec4b6`) primary, mint (`#cbf3f0`) secondary, soft orange (`#ffbf69`) accent, and orange (`#ff9f1c`) for restrained emphasis. Avoid hardcoded colors except when a one-off visual needs one of these palette values.
 - Use the ledger serif stack: `Iowan Old Style`, `Palatino Linotype`, `Palatino`, `Georgia`, `Cambria`, `Times New Roman`, `serif`. Keep numbers easy to scan; do not use negative tracking or viewport-scaled type.
@@ -27,7 +28,7 @@ Build every screen as a trusted private finance ledger: calm, precise, operation
 
 - **Welcome page:** Lead with `Aniara Intelledger`, one direct product statement, short professional copy, and a finance-oriented product surface. Do not add generic SaaS filler.
 - **Auth:** Keep forms focused and compact. Use a financial side panel on desktop and a centered, simple form on mobile. Primary actions are teal; success and status messages use mint.
-- **Dashboard:** Treat it as the operating surface for net worth, investments, cash runway, budgets, accounts, watchlists, syncs, and alerts. Until live data exists, render credible product-state placeholders.
+- **Dashboard:** Treat it as the operating surface for net worth, investments, cash runway, budgets, accounts, watchlists, syncs, and alerts. Until live data exists, render credible product-state placeholders. Make sample data and placeholder states distinguishable from live balances or confirmed syncs.
 
 ## Motion and exclusions
 

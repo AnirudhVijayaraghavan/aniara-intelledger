@@ -15,7 +15,6 @@
         "testing-best-practices",
         "wayfinder-development",
         "inertia-react-development",
-        "tailwindcss-development",
-        "deploying-laravel-cloud"
+        "tailwindcss-development"
     ]
 }
