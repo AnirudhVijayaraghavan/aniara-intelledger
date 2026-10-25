@@ -127,3 +127,85 @@ test('removed member current team is set to personal team', function () {
 
     expect($member->fresh()->current_team_id)->toEqual($personalTeam->id);
 });
+
+test('the last owner cannot demote themselves through a regular role update', function (TeamRole $role) {
+    $owner = User::factory()->create();
+    $team = $owner->personalTeam();
+
+    $response = $this->actingAs($owner)->patch(route('teams.members.update', [$team, $owner]), [
+        'role' => $role->value,
+    ]);
+
+    $response->assertForbidden();
+    $this->assertDatabaseHas('team_members', [
+        'team_id' => $team->id,
+        'user_id' => $owner->id,
+        'role' => TeamRole::Owner->value,
+    ]);
+})->with([TeamRole::Admin, TeamRole::Member]);
+
+test('regular role updates cannot demote another existing owner', function () {
+    $owner = User::factory()->create();
+    $otherOwner = User::factory()->create();
+    $team = $owner->personalTeam();
+    $team->members()->attach($otherOwner, ['role' => TeamRole::Owner->value]);
+
+    $response = $this->actingAs($owner)->patch(route('teams.members.update', [$team, $otherOwner]), [
+        'role' => TeamRole::Member->value,
+    ]);
+
+    $response->assertForbidden();
+    $this->assertDatabaseHas('team_members', [
+        'team_id' => $team->id,
+        'user_id' => $otherOwner->id,
+        'role' => TeamRole::Owner->value,
+    ]);
+});
+
+test('member removal protects every owner instead of only the first owner', function () {
+    $owner = User::factory()->create();
+    $otherOwner = User::factory()->create();
+    $team = $owner->personalTeam();
+    $team->members()->attach($otherOwner, ['role' => TeamRole::Owner->value]);
+
+    $response = $this->actingAs($owner)->delete(route('teams.members.destroy', [$team, $otherOwner]));
+
+    $response->assertForbidden();
+    $this->assertDatabaseHas('team_members', [
+        'team_id' => $team->id,
+        'user_id' => $otherOwner->id,
+        'role' => TeamRole::Owner->value,
+    ]);
+});
+
+test('owners can demote administrators to ordinary members', function () {
+    $owner = User::factory()->create();
+    $admin = User::factory()->create();
+    $team = $owner->personalTeam();
+    $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
+
+    $response = $this->actingAs($owner)->patch(route('teams.members.update', [$team, $admin]), [
+        'role' => TeamRole::Member->value,
+    ]);
+
+    $response->assertRedirect(route('teams.edit', $team));
+    $this->assertDatabaseHas('team_members', [
+        'team_id' => $team->id,
+        'user_id' => $admin->id,
+        'role' => TeamRole::Member->value,
+    ]);
+});
+
+test('membership updates cannot change a user in another team', function () {
+    $owner = User::factory()->create();
+    $outsider = User::factory()->create();
+    $team = $owner->personalTeam();
+
+    $response = $this->actingAs($owner)->patch(route('teams.members.update', [$team, $outsider]), [
+        'role' => TeamRole::Admin->value,
+    ]);
+
+    $response->assertNotFound();
+    $this->assertDatabaseMissing('team_members', ['team_id' => $team->id, 'user_id' => $outsider->id]);
+    expect($outsider->fresh()->ownsTeam($outsider->personalTeam()))->toBeTrue();
+});

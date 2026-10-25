@@ -9,10 +9,13 @@ use App\Http\Requests\Teams\RespondToTeamInvitationRequest;
 use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Notifications\Teams\TeamInvitation as TeamInvitationNotification;
+use App\Rules\ValidTeamInvitation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class TeamInvitationController extends Controller
@@ -22,14 +25,18 @@ class TeamInvitationController extends Controller
      */
     public function store(CreateTeamInvitationRequest $request, Team $team): RedirectResponse
     {
-        Gate::authorize('inviteMember', $team);
+        $invitation = DB::transaction(function () use ($request, $team): TeamInvitation {
+            $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
 
-        $invitation = $team->invitations()->create([
-            'email' => $request->validated('email'),
-            'role' => TeamRole::from($request->validated('role')),
-            'invited_by' => $request->user()->id,
-            'expires_at' => now()->addDays(3),
-        ]);
+            Gate::authorize('inviteMember', $team);
+
+            return $team->invitations()->create([
+                'email' => $request->validated('email'),
+                'role' => TeamRole::from($request->validated('role')),
+                'invited_by' => $request->user()->id,
+                'expires_at' => now()->addDays(3),
+            ]);
+        }, attempts: 3);
 
         Notification::route('mail', $invitation->email)
             ->notify(new TeamInvitationNotification($invitation));
@@ -62,8 +69,19 @@ class TeamInvitationController extends Controller
     {
         $user = $request->user();
 
-        DB::transaction(function () use ($user, $invitation) {
-            $team = $invitation->team;
+        DB::transaction(function () use ($user, $invitation): void {
+            $team = Team::whereKey($invitation->team_id)->lockForUpdate()->firstOrFail();
+            $invitation = $team->invitations()->whereKey($invitation->id)->lockForUpdate()->firstOrFail();
+
+            Validator::make(['invitation' => $invitation], [
+                'invitation' => [new ValidTeamInvitation($user)],
+            ])->validate();
+
+            if ($invitation->role === TeamRole::Owner) {
+                throw ValidationException::withMessages([
+                    'invitation' => __('Ownership cannot be granted through an invitation.'),
+                ]);
+            }
 
             $team->memberships()->firstOrCreate(
                 ['user_id' => $user->id],
@@ -73,7 +91,7 @@ class TeamInvitationController extends Controller
             $invitation->update(['accepted_at' => now()]);
 
             $user->switchTeam($team);
-        });
+        }, attempts: 3);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Invitation accepted.')]);
 

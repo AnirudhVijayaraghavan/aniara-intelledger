@@ -8,6 +8,7 @@ use App\Http\Requests\Teams\UpdateTeamMemberRequest;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -18,14 +19,16 @@ class TeamMemberController extends Controller
      */
     public function update(UpdateTeamMemberRequest $request, Team $team, User $user): RedirectResponse
     {
-        Gate::authorize('updateMember', $team);
+        DB::transaction(function () use ($request, $team, $user): void {
+            $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
 
-        $newRole = TeamRole::from($request->validated('role'));
+            Gate::authorize('updateMember', [$team, $user]);
 
-        $team->memberships()
-            ->where('user_id', $user->id)
-            ->firstOrFail()
-            ->update(['role' => $newRole]);
+            $team->memberships()
+                ->where('user_id', $user->id)
+                ->firstOrFail()
+                ->update(['role' => TeamRole::from($request->validated('role'))]);
+        }, attempts: 3);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Member role updated.')]);
 
@@ -37,17 +40,20 @@ class TeamMemberController extends Controller
      */
     public function destroy(Team $team, User $user): RedirectResponse
     {
-        Gate::authorize('removeMember', $team);
+        DB::transaction(function () use ($team, $user): void {
+            $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
 
-        abort_if($team->owner()?->is($user), 403, __('The team owner cannot be removed.'));
+            Gate::authorize('removeMember', [$team, $user]);
 
-        $team->memberships()
-            ->where('user_id', $user->id)
-            ->delete();
+            $team->memberships()
+                ->where('user_id', $user->id)
+                ->firstOrFail()
+                ->delete();
 
-        if ($user->isCurrentTeam($team)) {
-            $user->switchTeam($user->personalTeam());
-        }
+            if ($user->isCurrentTeam($team)) {
+                $user->switchTeam($user->personalTeam());
+            }
+        }, attempts: 3);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Member removed.')]);
 

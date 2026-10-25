@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, BookOpen, Compass } from 'lucide-react';
+import AppVersion from '@/components/app-version';
 import LedgerBrand from '@/components/ledger-brand';
 import LedgerPreview from '@/components/ledger-preview';
 import { home } from '@/routes';
@@ -75,6 +76,7 @@ export default function LedgerAuthLayout({
                             </p>
                         </div>
                         {children}
+                        <AppVersion className="mt-6 text-center" />
                     </div>
                 </main>
                 <p className="ledger-auth-footer shrink-0 text-center text-xs text-muted-foreground">

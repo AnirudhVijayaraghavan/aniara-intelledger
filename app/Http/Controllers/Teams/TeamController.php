@@ -122,21 +122,24 @@ class TeamController extends Controller
      */
     public function leave(Request $request, Team $team): RedirectResponse
     {
-        Gate::authorize('leave', $team);
+        DB::transaction(function () use ($request, $team): void {
+            $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
 
-        $user = $request->user();
+            Gate::authorize('leave', $team);
 
-        $fallbackTeam = $user->isCurrentTeam($team)
-            ? $user->fallbackTeam($team)
-            : null;
+            $user = $request->user();
+            $fallbackTeam = $user->isCurrentTeam($team)
+                ? $user->fallbackTeam($team)
+                : null;
 
-        $team->memberships()
-            ->where('user_id', $user->id)
-            ->delete();
+            $team->memberships()
+                ->where('user_id', $user->id)
+                ->delete();
 
-        if ($fallbackTeam) {
-            $user->switchTeam($fallbackTeam);
-        }
+            if ($fallbackTeam) {
+                $user->switchTeam($fallbackTeam);
+            }
+        }, attempts: 3);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('You left the team ":name"', ['name' => $team->name])]);
 
@@ -153,7 +156,11 @@ class TeamController extends Controller
             ? $user->fallbackTeam($team)
             : null;
 
-        DB::transaction(function () use ($user, $team) {
+        DB::transaction(function () use ($user, $team): void {
+            $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
+
+            Gate::authorize('delete', $team);
+
             User::where('current_team_id', $team->id)
                 ->where('id', '!=', $user->id)
                 ->each(fn (User $affectedUser) => $affectedUser->switchTeam($affectedUser->personalTeam()));
@@ -161,7 +168,7 @@ class TeamController extends Controller
             $team->invitations()->delete();
             $team->memberships()->delete();
             $team->delete();
-        });
+        }, attempts: 3);
 
         if ($fallbackTeam) {
             $user->switchTeam($fallbackTeam);

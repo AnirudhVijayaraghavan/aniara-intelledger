@@ -311,3 +311,71 @@ test('expired invitations cannot be accepted', function () {
 
     expect($invitedUser->fresh()->belongsToTeam($team))->toBeFalse();
 });
+
+test('regular invitations cannot grant ownership', function (TeamRole $inviterRole) {
+    Notification::fake();
+
+    $owner = User::factory()->create();
+    $inviter = User::factory()->create();
+    $team = $owner->personalTeam();
+    $team->members()->attach($inviter, ['role' => $inviterRole->value]);
+
+    $response = $this->actingAs($inviter)
+        ->post(route('teams.invitations.store', $team), [
+            'email' => 'invited@example.com',
+            'role' => TeamRole::Owner->value,
+        ]);
+
+    $response->assertSessionHasErrors('role');
+    $this->assertDatabaseMissing('team_invitations', ['team_id' => $team->id]);
+    Notification::assertNothingSent();
+})->with([TeamRole::Owner, TeamRole::Admin]);
+
+test('previously created owner invitations cannot be accepted', function () {
+    $owner = User::factory()->create();
+    $invitedUser = User::factory()->create();
+    $team = $owner->personalTeam();
+    $invitation = TeamInvitation::factory()->create([
+        'team_id' => $team->id,
+        'email' => $invitedUser->email,
+        'role' => TeamRole::Owner,
+        'invited_by' => $owner->id,
+    ]);
+    $currentTeamId = $invitedUser->current_team_id;
+
+    $response = $this->actingAs($invitedUser)->post(route('invitations.accept', $invitation));
+
+    $response->assertSessionHasErrors('invitation');
+    $this->assertDatabaseMissing('team_members', ['team_id' => $team->id, 'user_id' => $invitedUser->id]);
+    expect($invitation->fresh()->accepted_at)->toBeNull();
+    expect($invitedUser->fresh()->current_team_id)->toBe($currentTeamId);
+});
+
+test('admins can invite another administrator without granting ownership', function () {
+    Notification::fake();
+
+    $owner = User::factory()->create();
+    $admin = User::factory()->create();
+    $invitee = User::factory()->create();
+    $team = $owner->personalTeam();
+    $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
+
+    $response = $this->actingAs($admin)->post(route('teams.invitations.store', $team), [
+        'email' => $invitee->email,
+        'role' => TeamRole::Admin->value,
+    ]);
+
+    $response->assertRedirect(route('teams.edit', $team));
+    $invitation = $team->invitations()->sole();
+    Notification::assertSentOnDemand(TeamInvitationNotification::class);
+
+    $this->actingAs($invitee)->post(route('invitations.accept', $invitation))
+        ->assertRedirect(route('dashboard'));
+
+    $this->assertDatabaseHas('team_members', [
+        'team_id' => $team->id,
+        'user_id' => $invitee->id,
+        'role' => TeamRole::Admin->value,
+    ]);
+    expect($owner->fresh()->ownsTeam($team))->toBeTrue();
+});

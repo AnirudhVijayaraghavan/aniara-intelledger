@@ -61,17 +61,19 @@ class TeamPolicy
     /**
      * Determine whether the user can update a member's role in the team.
      */
-    public function updateMember(User $user, Team $team): bool
+    public function updateMember(User $user, Team $team, User $member): bool
     {
-        return $user->hasTeamPermission($team, TeamPermission::UpdateMember);
+        return $user->hasTeamPermission($team, TeamPermission::UpdateMember)
+            && ! $member->ownsTeam($team);
     }
 
     /**
      * Determine whether the user can remove a member from the team.
      */
-    public function removeMember(User $user, Team $team): bool
+    public function removeMember(User $user, Team $team, User $member): bool
     {
-        return $user->hasTeamPermission($team, TeamPermission::RemoveMember);
+        return $user->hasTeamPermission($team, TeamPermission::RemoveMember)
+            && ! $member->ownsTeam($team);
     }
 
     /**

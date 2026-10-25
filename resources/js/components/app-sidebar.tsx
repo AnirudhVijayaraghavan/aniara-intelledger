@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Wallet } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
+import AppVersion from '@/components/app-version';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { TeamSwitcher } from '@/components/team-switcher';
@@ -14,6 +15,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as accountsIndex } from '@/routes/accounts';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -29,6 +31,14 @@ export function AppSidebar() {
             icon: LayoutGrid,
         },
     ];
+
+    if (page.props.currentTeam) {
+        mainNavItems.push({
+            title: 'Accounts',
+            href: accountsIndex(page.props.currentTeam.slug),
+            icon: Wallet,
+        });
+    }
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -55,6 +65,7 @@ export function AppSidebar() {
 
             <SidebarFooter>
                 <NavUser />
+                <AppVersion className="px-2 pb-1 group-data-[collapsible=icon]:hidden" />
             </SidebarFooter>
         </Sidebar>
     );
