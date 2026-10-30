@@ -12,6 +12,7 @@ $server = null;
 $exit = 1;
 try {
     E2E::assertInvocation(getenv(), worker: true);
+    E2E::handleTerminationSignals();
     $environment = DisposablePostgreSql::environment();
     $connection = DisposablePostgreSql::configuration($environment);
     $context = E2E::context(getenv('INTELLEDGER_E2E_CONTEXT') ?: '');
@@ -32,7 +33,7 @@ try {
     fwrite(STDERR, "Financial E2E server refused or failed; no payload logged.\n");
 } finally {
     if ($server?->isRunning()) {
-        $server->stop(2);
+        $server->stop(1);
     }
 }
 exit($exit);

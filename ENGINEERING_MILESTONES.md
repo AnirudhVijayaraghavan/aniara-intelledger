@@ -760,3 +760,14 @@ configuration, stories, scripts, or mandatory CI integration are shipped.
   **18 checks / 114 assertions**, interrupted-worker probes and **five** real E2E
   journeys pass, with verified cleanup. Hosted post-fix results remain a separate
   acceptance step; a local Debian container is not a hosted Ubuntu pass.
+- Published fixture fix `3c17eae` and inspected Ubuntu run **41141154435**:
+  original safety failures resolved; seven validation jobs passed. Newly reached
+  HTTP interruption exposed POSIX supervisor termination leaving a child listener.
+  A bounded synthetic regression reproduces it; explicit signal unwinding now
+  reaches owned-child cleanup. Only the two affected test jobs request `pcntl`;
+  missing POSIX support refuses execution. Fresh Linux safety: **86/164**;
+  Windows E2E safety: **28/43**. The `ci` gate is unchanged.
+- That run also reported one WebKit/dark reflow **color-contrast** finding
+  (**89/90 component tests passed**), separately tracked without suppression or
+  unrelated UI changes. Final local/hosted follow-up is recorded in VALIDATION;
+  do not conflate the original three fixed assertions with these later failures.

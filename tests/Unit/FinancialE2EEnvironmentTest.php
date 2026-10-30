@@ -22,6 +22,44 @@ test('E2E accepts explicit invocation values and allows context only for a worke
     expect(fn () => E2E::assertInvocation($worker))->toThrow(RuntimeException::class);
 });
 
+test('interrupting the E2E supervisor releases its owned child listener', function () {
+    $reservation = stream_socket_server('tcp://127.0.0.1:0', $code, $message);
+    expect(is_resource($reservation))->toBeTrue();
+    $address = 'tcp://'.stream_socket_get_name($reservation, false);
+    fclose($reservation);
+    $supervisor = new Process([PHP_BINARY, '-r', <<<'PHP'
+require $argv[1].'/vendor/autoload.php';
+Tests\Support\FinancialE2EEnvironment::handleTerminationSignals();
+$server = new Symfony\Component\Process\Process([PHP_BINARY, '-r',
+    '$socket = stream_socket_server($argv[1]); if ($socket === false) { exit(1); } fwrite(STDOUT, "synthetic listener ready"); $client = @stream_socket_accept($socket, 10); if (is_resource($client)) { fclose($client); } fclose($socket);',
+    $argv[2]]);
+$server->setTimeout(12);
+try {
+    $server->run(static function (string $type, string $output): void { fwrite(STDOUT, $output); });
+} finally {
+    $server->stop(1);
+}
+PHP, dirname(__DIR__, 2), $address]);
+    $supervisor->setTimeout(15);
+    try {
+        $supervisor->start();
+        expect($supervisor->waitUntil(static fn (string $type, string $output): bool => str_contains($output, 'synthetic listener ready')))->toBeTrue();
+        $supervisor->stop(2);
+        $listener = @stream_socket_server($address, $code, $message);
+        try {
+            expect(is_resource($listener))->toBeTrue();
+        } finally {
+            if (is_resource($listener)) {
+                fclose($listener);
+            }
+        }
+    } finally {
+        if ($supervisor->isRunning()) {
+            $supervisor->stop(2);
+        }
+    }
+});
+
 test('E2E requires an additional explicit opt in and rejects inherited HTTP overrides', function (array $overrides) {
     expect(fn () => E2E::assertInvocation(array_replace(financialE2EOptIn(), $overrides)))->toThrow(RuntimeException::class);
 })->with([

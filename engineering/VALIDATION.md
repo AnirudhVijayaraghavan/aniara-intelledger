@@ -351,3 +351,46 @@ documents to PR #2's existing hardening branch. Verify the new run against its
 actual source SHA; the earlier failing run is not a post-fix pass. The local Linux
 reproduction used Debian, and does not establish hosted Ubuntu compatibility.
 No branch protection, security settings, deployment or AWS changes are authorized.
+
+### Hosted follow-up: POSIX supervisor ownership
+
+The first fix was published to PR #2 as
+`3c17eae032dca685470aba2a2bbfa00963242312`.
+[Run 41141154435](https://github.com/AnirudhVijayaraghavan/aniara-intelledger/actions/runs/41141154435)
+verified the original safety-test fixes on Ubuntu 24.04: `isolated-tests` and
+`postgres-integration` passed, and the financial E2E configuration-only safety
+step passed. Seven validation jobs passed. Two later failures kept `ci` red:
+
+- Financial E2E reached **controlled HTTP child interruption**, then refused
+  because the listener remained and cleanup could not be verified. A bounded
+  synthetic listener reproduced the POSIX defect independently of Laravel/PG.
+  Symfony Process sends SIGTERM only to its direct POSIX child; on Windows it
+  uses `taskkill /T`. Default PHP signal termination bypasses the supervisor's
+  `finally`, orphaning its HTTP child. This is distinct from the fixed cold-cache
+  assertions. No unsafe cleanup or forced database drop was attempted.
+- Browser accessibility independently reported one serious `color-contrast`
+  violation on an outline button in WebKit/dark narrow-reflow testing: **89/90
+  passed**. No component, axe rule, browser project or threshold was changed;
+  this finding needs separate accessibility investigation if reproducible.
+
+The POSIX-only correction registers SIGTERM/SIGINT handlers that unwind into the
+existing supervisor cleanup. Its owned child gets a one-second stop budget,
+inside the parent's existing two-second budget. Windows retains Symfony's native
+tree termination. POSIX runners require `pcntl` and fail closed without it;
+the isolated-tests and financial-e2e PHP setup steps now explicitly install that
+bundled extension. These are the only workflow changes; the final gate, opt-ins,
+lease verification and all quality/security thresholds remain unchanged.
+
+The permanent regression uses an ephemeral loopback port, a readiness event and
+one synthetic child with a ten-second accept deadline. It verifies successful
+port rebinding after supervisor interruption, without Laravel, databases,
+unrelated process termination or sleeps. It failed on Linux before the handler
+and passes afterward. Windows E2E safety: **28/43**; fresh Linux safety classes:
+**86 tests / 164 assertions**, without warnings. A local image compiled only PHP's
+bundled pcntl extension to exercise the actual POSIX behavior; no Composer/npm
+dependency or application runtime requirement was changed.
+
+Complete local CI is rerun after this correction. Its result and the new hosted
+run must be distinguished from the initial 1,702-test result above. The prior
+claim of unchanged workflow hashes applies to the initial fixture-only fix;
+the follow-up intentionally changes only the two PHP extension declarations.

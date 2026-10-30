@@ -137,7 +137,7 @@ jobs:
                   php-version: ${{ env.PHP_VERSION }}
                   tools: composer:v2
                   coverage: none
-                  extensions: mbstring, pdo_sqlite, sqlite3
+                  extensions: mbstring, pdo_sqlite, sqlite3, pcntl
 
             - name: Setup Node
               uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -376,7 +376,7 @@ jobs:
                   php-version: ${{ env.PHP_VERSION }}
                   tools: composer:v2
                   coverage: none
-                  extensions: mbstring, pdo_pgsql, pdo_sqlite, sqlite3, sodium
+                  extensions: mbstring, pdo_pgsql, pdo_sqlite, sqlite3, sodium, pcntl
 
             - name: Setup Node
               uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0

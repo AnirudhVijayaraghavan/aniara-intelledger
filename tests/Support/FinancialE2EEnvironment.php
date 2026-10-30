@@ -22,6 +22,21 @@ final class FinancialE2EEnvironment
 
     public const string URL = 'http://127.0.0.1:4182';
 
+    /** Unwind the POSIX supervisor so its finally block stops only its owned child. */
+    public static function handleTerminationSignals(): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            return;
+        }
+        self::require(function_exists('pcntl_async_signals') && function_exists('pcntl_signal'));
+        pcntl_async_signals(true);
+        foreach ([SIGTERM, SIGINT] as $signal) {
+            self::require(pcntl_signal($signal, static function (int $signal): never {
+                throw new RuntimeException('Owned E2E supervisor interrupted.');
+            }));
+        }
+    }
+
     /** @param array<string, string> $environment */
     public static function assertInvocation(array $environment, bool $worker = false): void
     {
