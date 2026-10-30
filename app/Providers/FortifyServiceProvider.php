@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Http\Middleware\ValidateAuthenticationEmail;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\PasskeyLoginResponse;
 use App\Http\Responses\RegisterResponse;
@@ -12,6 +13,7 @@ use App\Http\Responses\VerifyEmailResponse;
 use App\Models\TeamInvitation;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -22,6 +24,9 @@ use Laravel\Fortify\Contracts\TwoFactorLoginResponse as TwoFactorLoginResponseCo
 use Laravel\Fortify\Contracts\VerifyEmailResponse as VerifyEmailResponseContract;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
+use Laravel\Fortify\Http\Controllers\NewPasswordController;
+use Laravel\Fortify\Http\Controllers\RegisteredUserController;
 use Laravel\Passkeys\Contracts\PasskeyLoginResponse as PasskeyLoginResponseContract;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -55,6 +60,16 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+
+        foreach ([
+            RegisteredUserController::class => Fortify::username(),
+            AuthenticatedSessionController::class => Fortify::username(),
+            NewPasswordController::class => Fortify::email(),
+        ] as $controllerClass => $field) {
+            $this->app->resolving($controllerClass, static function (Controller $controller) use ($field): void {
+                $controller->middleware(ValidateAuthenticationEmail::class.':'.$field)->only('store');
+            });
+        }
     }
 
     /**
@@ -100,7 +115,9 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            $throttleKey = app(ValidateAuthenticationEmail::class)->hasValidShape($request, Fortify::username())
+                ? Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip())
+                : 'malformed-email|'.$request->ip();
 
             return Limit::perMinute(5)->by($throttleKey);
         });

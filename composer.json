@@ -9,27 +9,29 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
-        "inertiajs/inertia-laravel": "^3.5.2",
+        "php": "~8.4.1",
+        "inertiajs/inertia-laravel": "^3.6.0",
         "laravel/ai": "^1.3.0",
         "laravel/chisel": "^0.1.1",
         "laravel/fortify": "^1.41.0",
-        "laravel/framework": "^13.38",
+        "laravel/framework": "^13.39",
         "laravel/tinker": "^3.0.2",
         "laravel/wayfinder": "^0.1.23"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
-        "larastan/larastan": "^3.13.1",
-        "laravel/boost": "^2.10.3",
+        "larastan/larastan": "^3.13.2",
+        "laravel/boost": "^2.10.4",
         "laravel/pail": "^1.2.7",
         "laravel/pao": "^1.1.5",
         "laravel/pint": "^1.32.1",
         "laravel/sail": "^1.69",
         "mockery/mockery": "^1.6.15",
         "nunomaduro/collision": "^8.9.5",
-        "pestphp/pest": "^5.3.3",
-        "pestphp/pest-plugin-laravel": "^5.0.1"
+        "pestphp/pest": "^5.3.4",
+        "pestphp/pest-plugin-laravel": "^5.0.1",
+        "phpstan/phpstan-strict-rules": "2.1",
+        "rector/rector": "2.8.1"
     },
     "autoload": {
         "psr-4": {
@@ -60,22 +62,136 @@
             "pint --parallel"
         ],
         "lint:check": [
-            "pint --parallel --test"
+            "@ci:environment",
+            "@php -d memory_limit=256M vendor/bin/pint --test"
         ],
         "ci:check": [
+            "@quality:backend",
+            "@quality:frontend",
+            "@test:isolated"
+        ],
+        "ci:browser": [
+            "@ci:check",
+            "@quality:browser"
+        ],
+        "quality:browser": [
+            "@ci:environment",
+            "npm run test:browser",
+            "npm run test:browser:probe"
+        ],
+        "ci:environment": [
             "Composer\\Config::disableProcessTimeout",
-            "npm run check",
-            "npm run types:check",
-            "@test"
+            "Tests\\Support\\QualityEnvironment::configure"
+        ],
+        "quality:backend": [
+            "@types:check",
+            "@rector:check",
+            "@lint:check"
+        ],
+        "rector:check": [
+            "@ci:environment",
+            "@php -d memory_limit=512M vendor/bin/rector process --config=rector.php --dry-run --no-progress-bar --memory-limit=512M"
+        ],
+        "quality:frontend": [
+            "@frontend:build",
+            "@frontend:types",
+            "@frontend:test",
+            "@frontend:check"
+        ],
+        "security:check": [
+            "@security:composer",
+            "@security:npm"
+        ],
+        "security:composer": [
+            "@ci:environment",
+            "@composer --no-plugins --no-scripts audit --locked --abandoned=report --no-interaction"
+        ],
+        "security:npm": [
+            "@ci:environment",
+            "npm audit --package-lock-only --include=prod --include=dev --include=optional --include=peer --audit-level=info --ignore-scripts --json"
+        ],
+        "source:check": [
+            "@source:scan",
+            "@source:test"
+        ],
+        "source:scan": [
+            "@ci:environment",
+            "@php -d memory_limit=64M tests/Support/source-security.php scan"
+        ],
+        "source:test": [
+            "@ci:environment",
+            "@php -d memory_limit=64M tests/Support/source-security.php test"
+        ],
+        "secret:install": [
+            "python -B tests/Support/secret_security.py install"
+        ],
+        "secret:tree": [
+            "@ci:environment",
+            "python -B tests/Support/secret_security.py tree"
+        ],
+        "secret:history": [
+            "@ci:environment",
+            "python -B tests/Support/secret_security.py history"
+        ],
+        "secret:test": [
+            "@ci:environment",
+            "python -B tests/SecretSecurityTest.py"
+        ],
+        "secret:check": [
+            "@secret:tree",
+            "@secret:history",
+            "@secret:test"
+        ],
+        "frontend:build": [
+            "@ci:environment",
+            "npm run build"
+        ],
+        "frontend:types": [
+            "@ci:environment",
+            "npm run types:check"
+        ],
+        "frontend:test": [
+            "@ci:environment",
+            "npm run test:unit"
+        ],
+        "frontend:check": [
+            "@ci:environment",
+            "npm run check"
         ],
         "types:check": [
-            "phpstan analyse"
+            "@ci:environment",
+            "@php -d memory_limit=512M vendor/bin/phpstan analyse --debug --no-progress --memory-limit=512M"
         ],
         "test": [
-            "@php artisan config:clear --ansi",
-            "@lint:check",
-            "@types:check",
-            "@php artisan test"
+            "@test:isolated"
+        ],
+        "test:isolation": [
+            "@ci:environment",
+            "@php -d memory_limit=512M vendor/bin/pest tests/Unit/TestCaseTest.php --compact"
+        ],
+        "postgres:guard": [
+            "@ci:environment",
+            "@php -d memory_limit=512M vendor/bin/pest tests/Unit/PostgreSqlEnvironmentTest.php --compact"
+        ],
+        "e2e:guard": [
+            "@ci:environment",
+            "@php -d memory_limit=256M vendor/bin/pest tests/Unit/FinancialE2EEnvironmentTest.php --compact"
+        ],
+        "test:e2e": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php -d memory_limit=256M tests/FinancialE2E.php"
+        ],
+        "test:e2e:probe": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php -d memory_limit=256M tests/FinancialE2E.php --probe-server"
+        ],
+        "test:postgres": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php -d memory_limit=256M tests/PostgreSqlIntegration.php"
+        ],
+        "test:isolated": [
+            "@test:isolation",
+            "@php -d memory_limit=512M vendor/bin/pest --compact"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
@@ -96,6 +212,34 @@
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
         ]
+    },
+    "scripts-descriptions": {
+        "ci:browser": "Run the existing CI checks plus isolated Chromium accessibility tests and their failure probe.",
+        "quality:browser": "Run synthetic Playwright/axe component checks without Laravel or a financial database.",
+        "ci:check": "Run all EQ-01 quality checks serially; see ENGINEERING.md.",
+        "ci:environment": "Establish and verify a process-only SQLite in-memory testing context.",
+        "quality:backend": "Check level 8 PHP analysis, scoped Rector modernization, and Pint formatting without rewriting source.",
+        "rector:check": "Check the approved DTO/enum modernization rules without rewriting source.",
+        "types:check": "Check all configured PHPStan/Larastan paths at mandatory level 8.",
+        "quality:frontend": "Build assets, check TypeScript, run utility tests, and check lint/format serially.",
+        "security:check": "Audit both locked dependency graphs; fail on vulnerabilities or advisory-service errors.",
+        "security:composer": "Audit all locked Composer dependencies; report abandoned packages separately.",
+        "security:npm": "Audit all locked npm dependencies, including development, optional, and peer packages.",
+        "source:check": "Run the local-only pinned SAST scan and isolated positive/negative failure probes.",
+        "source:scan": "Check application-owned source; block findings, errors, and incomplete scans without printing snippets.",
+        "source:test": "Verify every local SAST rule and fail-closed scanner behavior using synthetic fixtures.",
+        "secret:install": "Install checksum-pinned Gitleaks and rules into ignored tooling storage only.",
+        "secret:tree": "Scan tracked working-tree files, or an explicitly labelled source snapshot when Git is absent.",
+        "secret:history": "Scan complete available Git history; fail if metadata is absent or shallow.",
+        "secret:test": "Run isolated secret detection, redaction, history, and failure-propagation probes.",
+        "secret:check": "Require both current-tree and full-history secret scans plus native probes.",
+        "test:isolation": "Run configuration-only database-isolation regression tests.",
+        "postgres:guard": "Check the PostgreSQL opt-in and effective-target safeguards without opening a database.",
+        "test:postgres": "Opt-in only: migrate, test, and remove a receipt-verified disposable PostgreSQL database.",
+        "e2e:guard": "Run configuration-only E2E refusal probes; no PostgreSQL service or HTTP server required.",
+        "test:e2e": "Explicit opt-in only: run real HTTP/browser financial journeys using an EQ-07 disposable PostgreSQL lease.",
+        "test:e2e:probe": "Explicit opt-in only: verify invalid server receipts and interrupted-child cleanup on a disposable lease.",
+        "test:isolated": "Verify isolation, then run the complete Pest suite serially."
     },
     "extra": {
         "laravel": {

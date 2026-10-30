@@ -8,6 +8,7 @@ import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { edit, index, show } from '@/routes/accounts';
+import { index as transactionsIndex } from '@/routes/transactions';
 
 type Props = AccountBalancesProps & {
     canManage: boolean;
@@ -28,6 +29,15 @@ export default function AccountDetails({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading title={account.name} description={team.name} />
                     <div className="flex flex-wrap items-center gap-2">
+                        <Button asChild variant="outline">
+                            <Link
+                                href={transactionsIndex(team.slug, {
+                                    query: { financial_account_id: account.id },
+                                })}
+                            >
+                                Transactions
+                            </Link>
+                        </Button>
                         {account.archived_at ? (
                             <Badge variant="secondary">Archived</Badge>
                         ) : (

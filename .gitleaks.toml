@@ -1,0 +1,16 @@
+title = "IntelLedger secret detection"
+
+# Verified upstream provider rules with inherited global path skips removed.
+[extend]
+path = ".phpunit.cache/gitleaks/rules.toml"
+
+# A deliberately truncated, unusable example in historical third-party guidance.
+# This exact path + invalid short format is not a provider credential. Realistic
+# credentials in the same file are covered by an isolated native counterexample.
+[[allowlists]]
+description = "Historical tooling guidance: six-character placeholder suffix, not a Stripe credential"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^\.agents/skills/laravel-best-practices/rules/config\.md$''']
+regexTarget = "match"
+regexes = ['''^STRIPE_SECRET=sk_live_[a-z0-9]{6}\r?$''']

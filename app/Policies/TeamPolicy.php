@@ -2,12 +2,20 @@
 
 namespace App\Policies;
 
+use App\Concerns\AuthorizesFinancialTeams;
 use App\Enums\TeamPermission;
 use App\Models\Team;
 use App\Models\User;
 
 class TeamPolicy
 {
+    use AuthorizesFinancialTeams;
+
+    public function updateReportingCurrency(User $user, Team $team): bool
+    {
+        return $this->canManageFinancialTeam($user, $team);
+    }
+
     /**
      * Determine whether the user can view any models.
      */

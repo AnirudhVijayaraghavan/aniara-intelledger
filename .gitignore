@@ -27,7 +27,25 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-/.agents
+# Keep Boost/local agent files ignored; share only the reviewed entrypoints.
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/engineering-php-review/
+!/.agents/skills/engineering-domain-review/
+!/.agents/skills/engineering-ci-security-review/
+!/.agents/skills/engineering-accessibility-review/
+!/.agents/skills/engineering-production-review/
+/.agents/skills/engineering-php-review/*
+/.agents/skills/engineering-domain-review/*
+/.agents/skills/engineering-ci-security-review/*
+/.agents/skills/engineering-accessibility-review/*
+/.agents/skills/engineering-production-review/*
+!/.agents/skills/engineering-php-review/SKILL.md
+!/.agents/skills/engineering-domain-review/SKILL.md
+!/.agents/skills/engineering-ci-security-review/SKILL.md
+!/.agents/skills/engineering-accessibility-review/SKILL.md
+!/.agents/skills/engineering-production-review/SKILL.md
 /.amp
 /.claude
 /.cursor

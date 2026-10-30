@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TeamPermission;
 use App\Enums\TeamRole;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
@@ -36,3 +37,19 @@ test('member management policies require ownership and protect owner memberships
     'outsider manages admin' => [null, TeamRole::Admin, false],
     'outsider manages owner' => [null, TeamRole::Owner, false],
 ])->with(['updateMember', 'removeMember']);
+
+test('strict enum membership preserves each role permission set', function (TeamRole $role, array $expected) {
+    $actual = [];
+    foreach (TeamPermission::cases() as $permission) {
+        $actual[$permission->value] = $role->hasPermission($permission);
+    }
+
+    expect($actual)->toBe($expected);
+})->with([
+    'owner' => [TeamRole::Owner, ['team:update' => true, 'team:delete' => true, 'member:add' => true,
+        'member:update' => true, 'member:remove' => true, 'invitation:create' => true, 'invitation:cancel' => true]],
+    'admin' => [TeamRole::Admin, ['team:update' => true, 'team:delete' => false, 'member:add' => false,
+        'member:update' => false, 'member:remove' => false, 'invitation:create' => true, 'invitation:cancel' => true]],
+    'member' => [TeamRole::Member, ['team:update' => false, 'team:delete' => false, 'member:add' => false,
+        'member:update' => false, 'member:remove' => false, 'invitation:create' => false, 'invitation:cancel' => false]],
+]);

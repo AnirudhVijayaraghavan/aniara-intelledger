@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class UpdateFinancialAccount
 {
@@ -44,8 +45,14 @@ class UpdateFinancialAccount
             $account->owners()->update(['user_id' => null]);
             $owners = $account->owners()->get()->keyBy('id');
 
-            foreach ($validated['owners'] as $inputOwner) {
+            foreach ($validated['owners'] as $index => $inputOwner) {
                 $owner = isset($inputOwner['id']) ? $owners->get($inputOwner['id']) : new FinancialAccountOwner;
+                if ($owner === null) {
+                    throw ValidationException::withMessages([
+                        "owners.{$index}.id" => 'The recorded holder could not be found. Reload the account before updating it.',
+                    ]);
+                }
+
                 $owner->fill([
                     'team_id' => $team->id,
                     'owner_name' => $inputOwner['owner_name'],

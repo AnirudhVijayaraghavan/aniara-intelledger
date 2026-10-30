@@ -1,151 +1,174 @@
-import {
-    ArrowDownLeft,
-    ArrowUpRight,
-    ChartNoAxesCombined,
-    Wallet,
-} from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { AlertCircle, ChartNoAxesCombined, Plus, Wallet } from 'lucide-react';
+import CurrencyOverview from '@/components/currency-overview';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { create, index, show } from '@/routes/accounts';
+import type { FinancialTeam, NetWorthOverview } from '@/types/finance';
+
+type Props = {
+    compact?: boolean;
+    overview?: NetWorthOverview;
+    team?: FinancialTeam;
+    canManageAccounts?: boolean;
+};
 
 export default function LedgerPreview({
     compact = false,
-}: {
-    compact?: boolean;
-}) {
-    return (
-        <section
-            aria-label="Illustrative financial overview"
-            className={cn(
-                'overflow-hidden rounded-md border border-border bg-card text-card-foreground',
-                compact && 'ledger-preview-compact shrink-0',
-            )}
-        >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
-                <span className="flex items-center gap-2 text-sm">
-                    <ChartNoAxesCombined className="size-4" /> Financial
-                    overview
-                </span>
-                <span className="rounded-sm bg-secondary px-2 py-1 text-xs text-secondary-foreground">
-                    Snapshot · Sample data
-                </span>
-            </div>
-            <div className="p-5 sm:p-7">
-                <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <p className="text-sm text-muted-foreground">
-                            Total net worth
-                        </p>
-                        <p className="mt-2 text-4xl tabular-nums sm:text-5xl">
-                            $284,650
-                            <span className="text-xl text-muted-foreground">
-                                .00
-                            </span>
-                        </p>
-                    </div>
-                    <span className="pt-1 text-xs text-muted-foreground">
-                        USD
+    overview,
+    team,
+    canManageAccounts = false,
+}: Props) {
+    if (!overview || !team) {
+        return (
+            <section
+                aria-label="Financial overview introduction"
+                className={cn(
+                    'overflow-hidden rounded-md border border-border bg-card text-card-foreground',
+                    compact && 'ledger-preview-compact shrink-0',
+                )}
+            >
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
+                    <span className="flex items-center gap-2 text-sm">
+                        <ChartNoAxesCombined className="size-4" />
+                        Financial overview
                     </span>
+                    <Badge variant="secondary">Household balance sheet</Badge>
                 </div>
-                <p className="mt-3 flex items-center gap-1 text-sm">
-                    <ArrowUpRight className="size-4" /> +$18,420{' '}
-                    <span className="text-muted-foreground">
-                        over the last 6 months
-                    </span>
-                </p>
-                <svg
-                    viewBox="0 0 600 160"
-                    role="img"
-                    aria-label="Illustrative net worth trend rising from April to September"
-                    className="mt-5 h-36 w-full overflow-visible"
-                >
-                    {[30, 75, 120].map((y) => (
-                        <line
-                            key={y}
-                            x1="0"
-                            x2="600"
-                            y1={y}
-                            y2={y}
-                            className="stroke-border"
-                            strokeDasharray="3 5"
-                        />
-                    ))}
-                    <path
-                        d="M0 138 L35 133 L70 140 L105 112 L140 117 L175 97 L210 108 L245 75 L280 82 L315 66 L350 76 L385 45 L420 56 L455 31 L490 39 L525 20 L560 25 L600 8 L600 160 L0 160 Z"
-                        className="fill-primary/10"
-                    />
-                    <path
-                        d="M0 138 L35 133 L70 140 L105 112 L140 117 L175 97 L210 108 L245 75 L280 82 L315 66 L350 76 L385 45 L420 56 L455 31 L490 39 L525 20 L560 25 L600 8"
-                        fill="none"
-                        className="stroke-primary"
-                        strokeWidth="3"
-                        strokeLinejoin="round"
-                    />
-                    <circle cx="600" cy="8" r="4" className="fill-primary" />
-                </svg>
-                <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                    <span>APR</span>
-                    <span>MAY</span>
-                    <span>JUN</span>
-                    <span>JUL</span>
-                    <span>AUG</span>
-                    <span>SEP</span>
-                </div>
-            </div>
-            <dl className="grid grid-cols-3 divide-x divide-border border-t border-border bg-muted/40">
-                {[
-                    ['Investments', '$196,250'],
-                    ['Cash reserves', '$58,400'],
-                    ['Other assets', '$30,000'],
-                ].map(([label, value]) => (
-                    <div key={label} className="px-3 py-4 sm:px-5">
-                        <dt className="text-xs text-muted-foreground">
-                            {label}
-                        </dt>
-                        <dd className="mt-1 text-lg tabular-nums sm:text-xl">
-                            {value}
-                        </dd>
-                    </div>
-                ))}
-            </dl>
-            {!compact && (
-                <div className="border-t border-border px-5 py-4">
-                    <div className="mb-3 flex items-center justify-between">
-                        <h3 className="text-sm">Recent ledger entries</h3>
-                        <span className="text-xs text-muted-foreground">
-                            Illustrative · USD
-                        </span>
-                    </div>
-                    {[
-                        {
-                            icon: ArrowDownLeft,
-                            label: 'Monthly income',
-                            detail: 'Income · 01 Sep',
-                            amount: '+$6,800.00',
-                        },
-                        {
-                            icon: Wallet,
-                            label: 'Everyday expenses',
-                            detail: 'Living · 02 Sep',
-                            amount: '−$142.60',
-                        },
-                    ].map(({ icon: Icon, label, detail, amount }) => (
-                        <div
-                            key={label}
-                            className="flex items-center gap-3 border-t border-border py-3"
-                        >
-                            <Icon className="size-4 shrink-0 text-muted-foreground" />
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm">{label}</p>
-                                <p className="text-xs text-muted-foreground">
-                                    {detail}
-                                </p>
-                            </div>
-                            <span className="text-sm tabular-nums">
-                                {amount}
-                            </span>
+                <div className="grid gap-4 p-5 sm:p-7">
+                    <Wallet className="size-7 text-primary" />
+                    <h3 className="text-xl">
+                        A clearer picture starts with your accounts.
+                    </h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                        Record your assets, liabilities, and dated balances in
+                        one household ledger.
+                    </p>
+                    <dl className="grid gap-3 border-t pt-4 text-sm">
+                        <div className="flex justify-between gap-3">
+                            <dt className="text-muted-foreground">
+                                Currencies
+                            </dt>
+                            <dd>USD and INR, separately</dd>
                         </div>
-                    ))}
+                        <div className="flex justify-between gap-3">
+                            <dt className="text-muted-foreground">Balances</dt>
+                            <dd>Recorded observations</dd>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                            <dt className="text-muted-foreground">
+                                Visibility
+                            </dt>
+                            <dd>Your household</dd>
+                        </div>
+                    </dl>
                 </div>
+            </section>
+        );
+    }
+
+    const currencies = Object.values(overview.currencies);
+    const missingAccounts = currencies.flatMap((currency) =>
+        currency.accounts.filter((account) => account.missingData),
+    );
+
+    if (currencies.length === 0) {
+        return (
+            <section
+                aria-labelledby="empty-household"
+                className="flex flex-col items-center gap-4 rounded-md border border-dashed bg-card px-6 py-14 text-center"
+            >
+                <Wallet className="size-8 text-muted-foreground" />
+                <h2 id="empty-household" className="text-lg font-medium">
+                    No financial accounts yet
+                </h2>
+                <p className="max-w-md text-sm text-muted-foreground">
+                    {canManageAccounts
+                        ? 'Add an account and record its balance to start your household balance sheet.'
+                        : 'A household owner or administrator can add accounts and record balances.'}{' '}
+                    USD and INR will be shown separately.
+                </p>
+                <Button
+                    asChild
+                    variant={canManageAccounts ? 'default' : 'outline'}
+                >
+                    <Link
+                        href={
+                            canManageAccounts
+                                ? create(team.slug)
+                                : index(team.slug)
+                        }
+                    >
+                        {canManageAccounts ? <Plus /> : <Wallet />}
+                        {canManageAccounts
+                            ? 'Add your first account'
+                            : 'View accounts'}
+                    </Link>
+                </Button>
+            </section>
+        );
+    }
+
+    return (
+        <div className="grid gap-6">
+            {!overview.isComplete && (
+                <Alert className="rounded-md border-accent bg-accent/15">
+                    <AlertCircle />
+                    <AlertTitle className="line-clamp-none tracking-normal">
+                        Partial financial overview
+                    </AlertTitle>
+                    <AlertDescription>
+                        <p>
+                            {missingAccounts.length}{' '}
+                            {missingAccounts.length === 1
+                                ? 'account is'
+                                : 'accounts are'}{' '}
+                            missing a valid balance observation. Totals include
+                            known balances only.
+                        </p>
+                        <ul className="flex flex-wrap gap-x-5 gap-y-2 pt-2">
+                            {missingAccounts.map((account) => (
+                                <li key={account.accountId}>
+                                    <Link
+                                        href={show([
+                                            team.slug,
+                                            account.accountId,
+                                        ])}
+                                        className="font-medium text-foreground underline underline-offset-4"
+                                    >
+                                        {account.accountName}
+                                    </Link>
+                                    <span>
+                                        {' '}
+                                        ·{' '}
+                                        {account.archivedAt
+                                            ? 'Archived; view history'
+                                            : canManageAccounts
+                                              ? 'Record a balance'
+                                              : 'View account'}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                        {!canManageAccounts && (
+                            <p className="pt-2">
+                                A household owner or administrator can record
+                                missing balances.
+                            </p>
+                        )}
+                    </AlertDescription>
+                </Alert>
             )}
-        </section>
+            {currencies.map((currency) => (
+                <CurrencyOverview
+                    key={currency.currencyCode}
+                    currency={currency}
+                    team={team}
+                    canManageAccounts={canManageAccounts}
+                />
+            ))}
+        </div>
     );
 }

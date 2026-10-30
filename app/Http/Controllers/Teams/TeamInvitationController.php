@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Teams;
 
 use App\Enums\TeamRole;
+use App\Http\AuthenticatedUserResolver;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teams\CreateTeamInvitationRequest;
 use App\Http\Requests\Teams\RespondToTeamInvitationRequest;
@@ -11,6 +12,7 @@ use App\Models\TeamInvitation;
 use App\Notifications\Teams\TeamInvitation as TeamInvitationNotification;
 use App\Rules\ValidTeamInvitation;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
@@ -20,20 +22,24 @@ use Inertia\Inertia;
 
 class TeamInvitationController extends Controller
 {
+    public function __construct(private AuthenticatedUserResolver $authenticatedUser) {}
+
     /**
      * Store a newly created invitation.
      */
     public function store(CreateTeamInvitationRequest $request, Team $team): RedirectResponse
     {
-        $invitation = DB::transaction(function () use ($request, $team): TeamInvitation {
+        $user = $this->authenticatedUser->resolve($request);
+
+        $invitation = DB::transaction(function () use ($request, $team, $user): TeamInvitation {
             $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
 
-            Gate::authorize('inviteMember', $team);
+            Gate::forUser($user)->authorize('inviteMember', $team);
 
             return $team->invitations()->create([
                 'email' => $request->validated('email'),
                 'role' => TeamRole::from($request->validated('role')),
-                'invited_by' => $request->user()->id,
+                'invited_by' => $user->id,
                 'expires_at' => now()->addDays(3),
             ]);
         }, attempts: 3);
@@ -49,11 +55,13 @@ class TeamInvitationController extends Controller
     /**
      * Cancel the specified invitation.
      */
-    public function destroy(Team $team, TeamInvitation $invitation): RedirectResponse
+    public function destroy(Request $request, Team $team, TeamInvitation $invitation): RedirectResponse
     {
+        $user = $this->authenticatedUser->resolve($request);
+
         abort_unless($invitation->team_id === $team->id, 404);
 
-        Gate::authorize('cancelInvitation', $team);
+        Gate::forUser($user)->authorize('cancelInvitation', $team);
 
         $invitation->delete();
 
@@ -67,7 +75,7 @@ class TeamInvitationController extends Controller
      */
     public function accept(RespondToTeamInvitationRequest $request, TeamInvitation $invitation): RedirectResponse
     {
-        $user = $request->user();
+        $user = $this->authenticatedUser->resolve($request);
 
         DB::transaction(function () use ($user, $invitation): void {
             $team = Team::whereKey($invitation->team_id)->lockForUpdate()->firstOrFail();
@@ -103,6 +111,8 @@ class TeamInvitationController extends Controller
      */
     public function decline(RespondToTeamInvitationRequest $request, TeamInvitation $invitation): RedirectResponse
     {
+        $this->authenticatedUser->resolve($request);
+
         $invitation->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Invitation declined.')]);

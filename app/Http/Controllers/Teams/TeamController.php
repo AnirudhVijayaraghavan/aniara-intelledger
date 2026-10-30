@@ -2,29 +2,37 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Actions\Finance\UpdateTeamReportingCurrency;
 use App\Actions\Teams\CreateTeam;
 use App\Enums\TeamRole;
+use App\Http\AuthenticatedUserResolver;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teams\DeleteTeamRequest;
 use App\Http\Requests\Teams\SaveTeamRequest;
+use App\Models\Currency;
 use App\Models\Membership;
 use App\Models\Team;
+use App\Models\TeamInvitation;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use UnexpectedValueException;
 
 class TeamController extends Controller
 {
+    public function __construct(private AuthenticatedUserResolver $authenticatedUser) {}
+
     /**
      * Display a listing of the user's teams.
      */
     public function index(Request $request): Response
     {
-        $user = $request->user();
+        $user = $this->authenticatedUser->resolve($request);
 
         return Inertia::render('teams/index', [
             'teams' => $user->toUserTeams(includeCurrent: true),
@@ -36,7 +44,7 @@ class TeamController extends Controller
      */
     public function store(SaveTeamRequest $request, CreateTeam $createTeam): RedirectResponse
     {
-        $team = $createTeam->handle($request->user(), $request->validated('name'));
+        $team = $createTeam->handle($this->authenticatedUser->resolve($request), $request->validated('name'));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Team created.')]);
 
@@ -48,7 +56,8 @@ class TeamController extends Controller
      */
     public function edit(Request $request, Team $team): Response
     {
-        $user = $request->user();
+        $user = $this->authenticatedUser->resolve($request);
+        Gate::forUser($user)->authorize('view', $team);
 
         return Inertia::render('teams/edit', [
             'team' => [
@@ -56,6 +65,7 @@ class TeamController extends Controller
                 'name' => $team->name,
                 'slug' => $team->slug,
                 'isPersonal' => $team->is_personal,
+                'reportingCurrencyCode' => $team->reporting_currency_code,
             ],
             'members' => $team->members()->get()->map(function (User $member) {
                 /** @var Membership $membership */
@@ -65,7 +75,7 @@ class TeamController extends Controller
                     'id' => $member->id,
                     'name' => $member->name,
                     'email' => $member->email,
-                    'avatar' => $member->avatar ?? null,
+                    'avatar' => null,
                     'role' => $membership->role->value,
                     'role_label' => $membership->role->label(),
                 ];
@@ -73,15 +83,11 @@ class TeamController extends Controller
             'invitations' => $team->invitations()
                 ->whereNull('accepted_at')
                 ->get()
-                ->map(fn ($invitation) => [
-                    'code' => $invitation->code,
-                    'email' => $invitation->email,
-                    'role' => $invitation->role->value,
-                    'role_label' => $invitation->role->label(),
-                    'created_at' => $invitation->created_at->toISOString(),
-                ]),
+                ->map(fn (TeamInvitation $invitation): array => $this->invitationData($invitation)),
             'permissions' => $user->toTeamPermissions($team),
             'availableRoles' => TeamRole::assignable(),
+            'reportingCurrencies' => Currency::whereIn('code', UpdateTeamReportingCurrency::SUPPORTED_CURRENCIES)->orderBy('code')->get(['code', 'name']),
+            'canUpdateReportingCurrency' => Gate::forUser($user)->allows('updateReportingCurrency', $team),
         ]);
     }
 
@@ -90,7 +96,8 @@ class TeamController extends Controller
      */
     public function update(SaveTeamRequest $request, Team $team): RedirectResponse
     {
-        Gate::authorize('update', $team);
+        $user = $this->authenticatedUser->resolve($request);
+        Gate::forUser($user)->authorize('update', $team);
 
         $team = DB::transaction(function () use ($request, $team) {
             $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
@@ -110,9 +117,10 @@ class TeamController extends Controller
      */
     public function switch(Request $request, Team $team): RedirectResponse
     {
-        abort_unless($request->user()->belongsToTeam($team), 403);
+        $user = $this->authenticatedUser->resolve($request);
+        abort_unless($user->belongsToTeam($team), 403);
 
-        $request->user()->switchTeam($team);
+        $user->switchTeam($team);
 
         return back();
     }
@@ -122,12 +130,12 @@ class TeamController extends Controller
      */
     public function leave(Request $request, Team $team): RedirectResponse
     {
-        DB::transaction(function () use ($request, $team): void {
+        $user = $this->authenticatedUser->resolve($request);
+        DB::transaction(function () use ($user, $team): void {
             $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
 
-            Gate::authorize('leave', $team);
+            Gate::forUser($user)->authorize('leave', $team);
 
-            $user = $request->user();
             $fallbackTeam = $user->isCurrentTeam($team)
                 ? $user->fallbackTeam($team)
                 : null;
@@ -151,7 +159,7 @@ class TeamController extends Controller
      */
     public function destroy(DeleteTeamRequest $request, Team $team): RedirectResponse
     {
-        $user = $request->user();
+        $user = $this->authenticatedUser->resolve($request);
         $fallbackTeam = $user->isCurrentTeam($team)
             ? $user->fallbackTeam($team)
             : null;
@@ -159,11 +167,20 @@ class TeamController extends Controller
         DB::transaction(function () use ($user, $team): void {
             $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
 
-            Gate::authorize('delete', $team);
+            Gate::forUser($user)->authorize('delete', $team);
 
             User::where('current_team_id', $team->id)
                 ->where('id', '!=', $user->id)
-                ->each(fn (User $affectedUser) => $affectedUser->switchTeam($affectedUser->personalTeam()));
+                ->each(function (User $affectedUser): void {
+                    $personalTeam = $affectedUser->personalTeam();
+                    if ($personalTeam === null) {
+                        throw ValidationException::withMessages([
+                            'name' => __('A user currently using this team has no personal team to switch to.'),
+                        ]);
+                    }
+
+                    $affectedUser->switchTeam($personalTeam);
+                });
 
             $team->invitations()->delete();
             $team->memberships()->delete();
@@ -177,5 +194,20 @@ class TeamController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Team deleted.')]);
 
         return to_route('teams.index');
+    }
+
+    /** @return array<string, string> */
+    private function invitationData(TeamInvitation $invitation): array
+    {
+        $createdAt = $invitation->created_at?->toISOString();
+        if ($createdAt === null) {
+            throw new UnexpectedValueException('Invitation creation timestamp must be valid.');
+        }
+
+        return [
+            'code' => $invitation->code, 'email' => $invitation->email,
+            'role' => $invitation->role->value, 'role_label' => $invitation->role->label(),
+            'created_at' => $createdAt,
+        ];
     }
 }

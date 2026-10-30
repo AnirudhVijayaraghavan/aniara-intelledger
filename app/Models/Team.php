@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -18,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property string $slug
+ * @property string $reporting_currency_code
  * @property bool $is_personal
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -28,11 +30,13 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, FinancialInstitution> $financialInstitutions
  * @property-read Collection<int, FinancialAccount> $financialAccounts
  */
-#[Fillable(['name', 'slug', 'is_personal'])]
+#[Fillable(['name', 'slug', 'is_personal', 'reporting_currency_code'])]
 class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */
     use GeneratesUniqueTeamSlugs, HasFactory, SoftDeletes;
+
+    protected $attributes = ['reporting_currency_code' => 'USD'];
 
     /**
      * Bootstrap the model and its traits.
@@ -107,6 +111,66 @@ class Team extends Model
     public function financialAccounts(): HasMany
     {
         return $this->hasMany(FinancialAccount::class);
+    }
+
+    /** @return HasMany<AccountTransaction, $this> */
+    public function accountTransactions(): HasMany
+    {
+        return $this->hasMany(AccountTransaction::class);
+    }
+
+    /** @return HasMany<TransactionTransfer, $this> */
+    public function transactionTransfers(): HasMany
+    {
+        return $this->hasMany(TransactionTransfer::class);
+    }
+
+    /** @return HasMany<TransactionCategory, $this> */
+    public function transactionCategories(): HasMany
+    {
+        return $this->hasMany(TransactionCategory::class);
+    }
+
+    /** @return HasMany<Payee, $this> */
+    public function payees(): HasMany
+    {
+        return $this->hasMany(Payee::class);
+    }
+
+    /** @return HasMany<TransactionRevision, $this> */
+    public function transactionRevisions(): HasMany
+    {
+        return $this->hasMany(TransactionRevision::class);
+    }
+
+    /** @return HasMany<TransactionImportBatch, $this> */
+    public function transactionImportBatches(): HasMany
+    {
+        return $this->hasMany(TransactionImportBatch::class);
+    }
+
+    /** @return HasMany<TransactionImportRow, $this> */
+    public function transactionImportRows(): HasMany
+    {
+        return $this->hasMany(TransactionImportRow::class);
+    }
+
+    /** @return HasMany<TransactionSourceReference, $this> */
+    public function transactionSourceReferences(): HasMany
+    {
+        return $this->hasMany(TransactionSourceReference::class);
+    }
+
+    /** @return HasMany<ExchangeRate, $this> */
+    public function exchangeRates(): HasMany
+    {
+        return $this->hasMany(ExchangeRate::class);
+    }
+
+    /** @return BelongsTo<Currency, $this> */
+    public function reportingCurrency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'reporting_currency_code', 'code');
     }
 
     /**

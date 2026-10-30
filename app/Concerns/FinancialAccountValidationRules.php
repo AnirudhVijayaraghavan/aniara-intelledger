@@ -67,13 +67,14 @@ trait FinancialAccountValidationRules
                 $validator->errors()->add('owners', 'Keep all recorded holders. You may edit their details or add holders.');
             }
 
-            if ($account !== null && $account->balances()->exists()) {
+            if ($account !== null && $account->hasFinancialHistory()) {
+                $history = $account->balances()->exists() ? 'balance' : 'transaction';
                 if ($input['currency_code'] !== $account->currency_code) {
-                    $validator->errors()->add('currency_code', 'Currency cannot change after balance history exists.');
+                    $validator->errors()->add('currency_code', 'Currency cannot change after '.$history.' history exists.');
                 }
 
                 if (FinancialAccountType::from($input['type'])->isLiability() !== $account->type->isLiability()) {
-                    $validator->errors()->add('type', 'Asset/liability classification cannot change after balance history exists.');
+                    $validator->errors()->add('type', 'Asset/liability classification cannot change after '.$history.' history exists.');
                 }
             }
         });

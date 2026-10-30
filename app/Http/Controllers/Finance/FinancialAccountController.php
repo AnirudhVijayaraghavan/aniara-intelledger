@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Finance;
 use App\Actions\Finance\CreateFinancialAccount;
 use App\Actions\Finance\UpdateFinancialAccount;
 use App\Enums\FinancialAccountType;
+use App\Http\AuthenticatedUserResolver;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\ArchiveFinancialAccountRequest;
 use App\Http\Requests\Finance\SaveFinancialAccountRequest;
@@ -23,9 +24,12 @@ use Inertia\Response;
 
 class FinancialAccountController extends Controller
 {
+    public function __construct(private AuthenticatedUserResolver $authenticatedUser) {}
+
     public function index(Request $request, Team $currentTeam): Response
     {
-        Gate::authorize('viewAny', [FinancialAccount::class, $currentTeam]);
+        $user = $this->authenticatedUser->resolve($request);
+        Gate::forUser($user)->authorize('viewAny', [FinancialAccount::class, $currentTeam]);
         $filters = $request->validate([
             'type' => ['nullable', Rule::enum(FinancialAccountType::class)],
             'status' => ['nullable', Rule::in(['active', 'archived'])],
@@ -41,29 +45,30 @@ class FinancialAccountController extends Controller
             'accounts' => $accounts->through(fn (FinancialAccount $account) => $this->accountData($account)),
             'types' => $this->types(),
             'filters' => ['type' => $filters['type'] ?? '', 'status' => $status],
-            'canManage' => Gate::allows('create', [FinancialAccount::class, $currentTeam]),
+            'canManage' => Gate::forUser($user)->allows('create', [FinancialAccount::class, $currentTeam]),
         ]);
     }
 
-    public function create(Team $currentTeam): Response
+    public function create(Request $request, Team $currentTeam): Response
     {
-        Gate::authorize('create', [FinancialAccount::class, $currentTeam]);
+        Gate::forUser($this->authenticatedUser->resolve($request))->authorize('create', [FinancialAccount::class, $currentTeam]);
 
         return $this->form($currentTeam);
     }
 
     public function store(SaveFinancialAccountRequest $request, Team $currentTeam, CreateFinancialAccount $createAccount): RedirectResponse
     {
-        $account = $createAccount->handle($request->user(), $currentTeam, $request->validated());
+        $account = $createAccount->handle($this->authenticatedUser->resolve($request), $currentTeam, $request->validated());
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Account created.')]);
 
         return to_route('accounts.show', ['current_team' => $currentTeam, 'financial_account' => $account]);
     }
 
-    public function show(Team $currentTeam, FinancialAccount $financialAccount): Response
+    public function show(Request $request, Team $currentTeam, FinancialAccount $financialAccount): Response
     {
-        Gate::authorize('view', $financialAccount);
-        Gate::authorize('viewAny', [AccountBalance::class, $financialAccount]);
+        $user = $this->authenticatedUser->resolve($request);
+        Gate::forUser($user)->authorize('view', $financialAccount);
+        Gate::forUser($user)->authorize('viewAny', [AccountBalance::class, $financialAccount]);
 
         $latestBalance = $financialAccount->balances()->notVoided()->newestFirst()->first();
         $balances = $financialAccount->balances()->with('voidedBy:id,name')->newestFirst()->paginate(25);
@@ -71,11 +76,11 @@ class FinancialAccountController extends Controller
         return Inertia::render('accounts/show', [
             'team' => $currentTeam->only(['id', 'name', 'slug']),
             'account' => $this->accountData($financialAccount->load(['owners', 'institution'])),
-            'canManage' => Gate::allows('update', $financialAccount),
+            'canManage' => Gate::forUser($user)->allows('update', $financialAccount),
             'currentBalance' => $latestBalance === null ? null : $this->balanceData($latestBalance),
             'balances' => $balances->through(fn (AccountBalance $balance) => $this->balanceData($balance)),
-            'canRecordBalance' => Gate::allows('create', [AccountBalance::class, $financialAccount]),
-            'canVoidBalances' => $latestBalance !== null && Gate::allows('voidObservation', $latestBalance->setRelation('team', $currentTeam)),
+            'canRecordBalance' => Gate::forUser($user)->allows('create', [AccountBalance::class, $financialAccount]),
+            'canVoidBalances' => $latestBalance !== null && Gate::forUser($user)->allows('voidObservation', $latestBalance->setRelation('team', $currentTeam)),
             'today' => now()->toDateString(),
         ]);
     }
@@ -96,16 +101,16 @@ class FinancialAccountController extends Controller
         ];
     }
 
-    public function edit(Team $currentTeam, FinancialAccount $financialAccount): Response
+    public function edit(Request $request, Team $currentTeam, FinancialAccount $financialAccount): Response
     {
-        Gate::authorize('update', $financialAccount);
+        Gate::forUser($this->authenticatedUser->resolve($request))->authorize('update', $financialAccount);
 
         return $this->form($currentTeam, $financialAccount);
     }
 
     public function update(SaveFinancialAccountRequest $request, Team $currentTeam, FinancialAccount $financialAccount, UpdateFinancialAccount $updateAccount): RedirectResponse
     {
-        $updateAccount->handle($request->user(), $currentTeam, $financialAccount, $request->validated());
+        $updateAccount->handle($this->authenticatedUser->resolve($request), $currentTeam, $financialAccount, $request->validated());
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Account updated.')]);
 
         return to_route('accounts.show', ['current_team' => $currentTeam, 'financial_account' => $financialAccount]);
@@ -113,10 +118,11 @@ class FinancialAccountController extends Controller
 
     public function archive(ArchiveFinancialAccountRequest $request, Team $currentTeam, FinancialAccount $financialAccount): RedirectResponse
     {
-        DB::transaction(function () use ($currentTeam, $financialAccount): void {
+        $user = $this->authenticatedUser->resolve($request);
+        DB::transaction(function () use ($currentTeam, $financialAccount, $user): void {
             $team = Team::whereKey($currentTeam->id)->lockForUpdate()->firstOrFail();
             $account = $team->financialAccounts()->whereKey($financialAccount->id)->lockForUpdate()->firstOrFail();
-            Gate::authorize('archive', $account);
+            Gate::forUser($user)->authorize('archive', $account);
             $account->update(['archived_at' => $account->archived_at ?? now()]);
         }, attempts: 3);
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Account archived. History and holders have been preserved.')]);
@@ -129,7 +135,7 @@ class FinancialAccountController extends Controller
         return Inertia::render('accounts/form', [
             'team' => $team->only(['id', 'name', 'slug']),
             'account' => $account === null ? null : $this->accountData($account->load(['owners', 'institution'])),
-            'hasHistory' => $account?->balances()->exists() ?? false,
+            'hasHistory' => $account?->hasFinancialHistory() ?? false,
             'types' => $this->types(),
             'currencies' => Currency::orderBy('code')->get(['code', 'name']),
             'institutions' => $team->financialInstitutions()

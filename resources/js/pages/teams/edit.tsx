@@ -7,6 +7,7 @@ import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import InviteMemberModal from '@/components/invite-member-modal';
 import RemoveMemberModal from '@/components/remove-member-modal';
+import ReportingCurrencyForm from '@/components/reporting-currency-form';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,9 @@ import type {
 } from '@/types';
 
 type Props = {
-    team: Team;
+    team: Team & { reportingCurrencyCode: string };
+    reportingCurrencies: { code: string; name: string }[];
+    canUpdateReportingCurrency: boolean;
     members: TeamMember[];
     invitations: TeamInvitation[];
     permissions: TeamPermissions;
@@ -45,6 +48,8 @@ type Props = {
 
 export default function TeamEdit({
     team,
+    reportingCurrencies,
+    canUpdateReportingCurrency,
     members,
     invitations,
     permissions,
@@ -143,6 +148,12 @@ export default function TeamEdit({
                         </>
                     )}
                 </div>
+
+                <ReportingCurrencyForm
+                    team={team}
+                    currencies={reportingCurrencies}
+                    canUpdate={canUpdateReportingCurrency}
+                />
 
                 <div className="space-y-6">
                     <div className="flex items-center justify-between">
