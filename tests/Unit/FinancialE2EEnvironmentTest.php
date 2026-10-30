@@ -15,6 +15,13 @@ function financialE2EOptIn(): array
         'PG_TEST_PASSWORD' => 'ci-only', 'INTELLEDGER_FINANCIAL_E2E' => E2E::OPT_IN];
 }
 
+test('E2E accepts explicit invocation values and allows context only for a worker', function () {
+    E2E::assertInvocation(financialE2EOptIn());
+    $worker = array_replace(financialE2EOptIn(), ['INTELLEDGER_E2E_CONTEXT' => '{}']);
+    E2E::assertInvocation($worker, worker: true);
+    expect(fn () => E2E::assertInvocation($worker))->toThrow(RuntimeException::class);
+});
+
 test('E2E requires an additional explicit opt in and rejects inherited HTTP overrides', function (array $overrides) {
     expect(fn () => E2E::assertInvocation(array_replace(financialE2EOptIn(), $overrides)))->toThrow(RuntimeException::class);
 })->with([
@@ -91,11 +98,11 @@ test('E2E cleans recorded bootstrap files left by an interrupted child without a
     $cache = dirname(__DIR__, 2).'/.phpunit.cache';
     $run = $cache.'/e2e-run-'.bin2hex(random_bytes(12));
     $directory = $cache.'/pg-environment-'.bin2hex(random_bytes(12));
-    mkdir($run, 0700);
-    mkdir($directory, 0700);
     try {
-        file_put_contents($directory.'/packages.php', '<?php return [];');
-        file_put_contents($run.'/bootstrap-directories.jsonl', json_encode($directory, JSON_THROW_ON_ERROR)."\n");
+        expect(mkdir($run, 0700, true))->toBeTrue();
+        expect(mkdir($directory, 0700))->toBeTrue();
+        expect(file_put_contents($directory.'/packages.php', '<?php return [];'))->not->toBeFalse();
+        expect(file_put_contents($run.'/bootstrap-directories.jsonl', json_encode($directory, JSON_THROW_ON_ERROR)."\n"))->not->toBeFalse();
         E2E::clearRun($run);
         expect(is_dir($directory))->toBeFalse();
         expect(is_dir($run))->toBeFalse();
@@ -109,16 +116,19 @@ test('E2E cleans recorded bootstrap files left by an interrupted child without a
 
 test('E2E refuses to clean an unverified bootstrap directory from its private ledger', function () {
     $run = dirname(__DIR__, 2).'/.phpunit.cache/e2e-run-'.bin2hex(random_bytes(12));
-    mkdir($run, 0700);
-    mkdir($run.'/unrelated', 0700);
     $ledger = $run.'/bootstrap-directories.jsonl';
     try {
-        file_put_contents($run.'/unrelated/sentinel', 'Synthetic preserved file');
-        file_put_contents($ledger, json_encode($run.'/unrelated', JSON_THROW_ON_ERROR)."\n");
+        expect(mkdir($run.'/unrelated', 0700, true))->toBeTrue();
+        expect(file_put_contents($run.'/unrelated/sentinel', 'Synthetic preserved file'))->not->toBeFalse();
+        expect(file_put_contents($ledger, json_encode($run.'/unrelated', JSON_THROW_ON_ERROR)."\n"))->not->toBeFalse();
         expect(fn () => E2E::clearRun($run))->toThrow(RuntimeException::class);
         expect(is_file($run.'/unrelated/sentinel'))->toBeTrue();
     } finally {
-        unlink($ledger);
-        E2E::clearRun($run);
+        if (is_file($ledger)) {
+            unlink($ledger);
+        }
+        if (is_dir($run)) {
+            E2E::clearRun($run);
+        }
     }
 });

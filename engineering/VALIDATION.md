@@ -273,3 +273,81 @@ Hosted enforcement, production recovery, manual accessibility and standalone CLI
 discovery remain separate acceptance work. The educational curriculum is prepared,
 not delivered. No production deployment or real-financial-data readiness follows
 from Enterprise Engineering Excellence v1 local closure.
+
+## GH-01A: Hosted safety-test remediation (2026-10-30)
+
+This supersedes the earlier **blocked preparation** status only for the now
+available PR source. [PR #2](https://github.com/AnirudhVijayaraghavan/aniara-intelledger/pull/2)
+uses `hardening/enterprise-engineering-v1`, initially inspected at
+`c78737271a4ec8bc95b0735225915e6144e99ee0`.
+[Run 41136929148](https://github.com/AnirudhVijayaraghavan/aniara-intelledger/actions/runs/41136929148)
+failed `isolated-tests`, `postgres-integration` and `financial-e2e`; the other six
+validation jobs passed and the final `ci` gate correctly failed. These are current
+workflow failures, distinct from the older runs documented above.
+
+The three failing assertions share a cold-checkout fixture defect. The two E2E
+cleanup tests and the PostgreSQL unexpected-artifact test used nonrecursive
+`mkdir` beneath an absent `.phpunit.cache`. Their unchecked writes consequently
+created no fixture. E2E's `assertRun` correctly rejected `realpath($run) === false`; the
+refusal test's `finally` then masked the missing-sentinel assertion. PostgreSQL's
+idempotent cleanup correctly returned for the nonexistent directory. No unsafe
+E2E invocation was accepted or incorrectly rejected by these failures.
+
+`assertInvocation` consumes its explicit argument (the real runner passes
+`getenv()`); its worker context and console/storage/view/asset overrides are
+unchanged. PostgreSQL's separate environment collector still requires agreement
+between `getenv()`, `$_ENV` and `$_SERVER`, and rejects cached/inherited targets.
+The existing conflict test restores all three sources in `finally`; the new
+fixture tests do not change environment variables. Canonical-path, lease,
+OID/nonce/owner, account and HTTP-port checks remain intact.
+
+The fixtures now create parents explicitly, assert successful setup and clean
+their owned files in `finally`. The actual E2E entry point also checks recursive
+private-directory creation. A separately reproduced cleanup defect was corrected:
+all cache entries are validated before any unlink, and root/file symlinks are
+explicitly refused. Thus a pre-existing unexpected file or nested directory
+preserves the complete inspected evidence, including allowed cache files. Null
+and already-removed paths remain safe idempotent no-ops. This is private-directory
+validation, not a claim of atomic filesystem operations against malicious
+concurrent same-user changes or recoverability after an unlink I/O failure.
+
+Local evidence:
+
+- A network-disabled, read-only PHP 8.4 **Debian Bookworm** container with a fresh
+  temporary filesystem reproduced the original **3 failures / 78 passes** with
+  the existing Pest files. After the fix: **85 passed / 161 assertions**.
+- Windows `composer e2e:guard`: **27 passed / 40 assertions**;
+  `composer postgres:guard`: **58 passed / 121 assertions**;
+  `composer test:isolation`: **26 passed / 74 assertions**.
+- Added regression cases first failed against the old cleanup because it removed
+  `config.php` before refusing the later artifact. They now preserve it for
+  unexpected files, nested directories and directories named `routes.php`.
+- Isolated Linux probes rejected file, directory and dangling symlinks and retained
+  evidence. This Windows account cannot create symlinks; no Windows symlink pass
+  or skipped test is claimed. The Linux container is not an Ubuntu hosted pass.
+- `composer ci:check`: **exit 0; 1,702 Pest tests / 11,727 assertions**, plus
+  PHPStan level 8/Strict Rules, Rector, Pint, TypeScript, lint/format, 36 Node tests
+  and production build. Explicit changed-file Pint also passes (`--dirty` requires
+  Git metadata, unavailable in the working archive).
+- `composer security:check`: **exit 0**, both dependency audits clean.
+  `composer source:check`: **exit 0**, Semgrep 1.182.1 scans **470 required files /
+  zero findings**; all **six** native failure probes pass. A direct PowerShell npm
+  invocation hit execution-policy restrictions; invoking the installed `npm.cmd`
+  shim correctly ran `npm.cmd run format:check`: **exit 0 / 187 files**.
+- `composer test:postgres`: **18 checks / 114 assertions / verified cleanup** on a
+  newly created, memory-backed service using CI's exact PostgreSQL 18.6 image
+  digest. `composer test:e2e:probe` passes; `composer test:e2e`: **five Chromium
+  journeys passed**, with verified cleanup for both. No development target used.
+- After those checks the task-owned service reported **zero leased databases and
+  zero lease-worker sessions**. It was stopped and removed without force; no
+  private E2E/PostgreSQL cache directories or listener on port 4182 remained.
+- Protected `.env`, lockfiles, workflow and SQLite TestCase hashes are unchanged.
+  The final `ci` gate is untouched; all prior negative probes remain enabled.
+  A separate PR-branch checkout matches all **583 tracked paths** in the working
+  archive after applying only this reviewed patch (line-ending normalization).
+
+Hosted follow-up: publish only the reviewed four PHP files and these two evidence
+documents to PR #2's existing hardening branch. Verify the new run against its
+actual source SHA; the earlier failing run is not a post-fix pass. The local Linux
+reproduction used Debian, and does not establish hosted Ubuntu compatibility.
+No branch protection, security settings, deployment or AWS changes are authorized.

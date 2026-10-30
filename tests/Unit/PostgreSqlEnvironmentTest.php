@@ -221,15 +221,61 @@ test('private PostgreSQL cache cleanup refuses unrelated directories', function 
     }
 });
 
-test('private PostgreSQL cache cleanup refuses unexpected artifacts and retains evidence', function () {
+test('private PostgreSQL cache cleanup removes only verified bootstrap files', function () {
     $directory = dirname(__DIR__, 2).'/.phpunit.cache/pg-environment-'.bin2hex(random_bytes(12));
-    mkdir($directory, 0700);
+    $names = ['config.php', 'routes.php', 'events.php', 'services.php', 'packages.php'];
     try {
-        file_put_contents($directory.'/unexpected.txt', 'synthetic');
-        expect(fn () => DisposablePostgreSql::clearEnvironmentDirectory($directory))->toThrow(RuntimeException::class);
-        expect(file_exists($directory.'/unexpected.txt'))->toBeTrue();
+        expect(mkdir($directory, 0700, true))->toBeTrue();
+        foreach ($names as $name) {
+            expect(file_put_contents($directory.'/'.$name, 'synthetic'))->not->toBeFalse();
+        }
+        DisposablePostgreSql::clearEnvironmentDirectory($directory);
+        expect(is_dir($directory))->toBeFalse();
+        DisposablePostgreSql::clearEnvironmentDirectory($directory);
+        DisposablePostgreSql::clearEnvironmentDirectory(null);
     } finally {
-        unlink($directory.'/unexpected.txt');
-        rmdir($directory);
+        foreach ($names as $name) {
+            if (is_file($directory.'/'.$name)) {
+                unlink($directory.'/'.$name);
+            }
+        }
+        if (is_dir($directory)) {
+            rmdir($directory);
+        }
     }
 });
+
+test('private PostgreSQL cache cleanup refuses unexpected artifacts and retains evidence', function (string $name, bool $nested) {
+    $directory = dirname(__DIR__, 2).'/.phpunit.cache/pg-environment-'.bin2hex(random_bytes(12));
+    try {
+        expect(mkdir($directory, 0700, true))->toBeTrue();
+        expect(file_put_contents($directory.'/config.php', 'preserved bootstrap evidence'))->not->toBeFalse();
+        if ($nested) {
+            expect(mkdir($directory.'/'.$name, 0700))->toBeTrue();
+            expect(file_put_contents($directory.'/'.$name.'/sentinel', 'synthetic'))->not->toBeFalse();
+        } else {
+            expect(file_put_contents($directory.'/'.$name, 'synthetic'))->not->toBeFalse();
+        }
+        expect(fn () => DisposablePostgreSql::clearEnvironmentDirectory($directory))->toThrow(RuntimeException::class);
+        expect(file_get_contents($directory.'/config.php'))->toBe('preserved bootstrap evidence');
+        expect(file_get_contents($directory.'/'.$name.($nested ? '/sentinel' : '')))->toBe('synthetic');
+    } finally {
+        if (is_file($directory.'/config.php')) {
+            unlink($directory.'/config.php');
+        }
+        $artifact = $directory.'/'.$name.($nested ? '/sentinel' : '');
+        if (is_file($artifact)) {
+            unlink($artifact);
+        }
+        if ($nested && is_dir($directory.'/'.$name)) {
+            rmdir($directory.'/'.$name);
+        }
+        if (is_dir($directory)) {
+            rmdir($directory);
+        }
+    }
+})->with([
+    'unexpected file' => ['unexpected.txt', false],
+    'unexpected directory' => ['unexpected', true],
+    'allowed filename is a directory' => ['routes.php', true],
+]);

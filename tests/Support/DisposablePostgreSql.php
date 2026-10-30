@@ -243,16 +243,26 @@ final class DisposablePostgreSql
 
     public static function clearEnvironmentDirectory(?string $directory): void
     {
-        if ($directory === null || ! is_dir($directory)) {
+        if ($directory === null) {
+            return;
+        }
+        self::require(! is_link($directory));
+        if (! is_dir($directory)) {
             return;
         }
         self::require(preg_match('/\Apg-environment-[a-f0-9]{24}\z/', basename($directory)) === 1
             && realpath(dirname($directory)) === realpath(dirname(__DIR__, 2).'/.phpunit.cache')
             && realpath($directory) === realpath(dirname($directory)).DIRECTORY_SEPARATOR.basename($directory));
-        foreach (array_diff(scandir($directory), ['.', '..']) as $name) {
+        $entries = scandir($directory);
+        self::require(is_array($entries));
+        $names = array_diff($entries, ['.', '..']);
+        foreach ($names as $name) {
             $file = $directory.'/'.$name;
-            self::require(is_file($file) && preg_match('/\A(?:config|routes|events|services|packages)\.php\z/', $name) === 1);
-            unlink($file);
+            self::require(! is_link($file) && is_file($file)
+                && preg_match('/\A(?:config|routes|events|services|packages)\.php\z/', $name) === 1);
+        }
+        foreach ($names as $name) {
+            self::require(unlink($directory.'/'.$name));
         }
         self::require(rmdir($directory));
     }

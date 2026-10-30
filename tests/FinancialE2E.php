@@ -25,7 +25,9 @@ try {
     }
     E2E::assertPortFree();
     $run = dirname(__DIR__).'/.phpunit.cache/e2e-run-'.bin2hex(random_bytes(12));
-    mkdir($run, 0700);
+    if (! mkdir($run, 0700, true)) {
+        throw new RuntimeException('Unable to create the private E2E run directory.');
+    }
     foreach (['framework/views', 'framework/sessions', 'framework/cache/data', 'app/private', 'imports', 'uploads', 'logs'] as $path) {
         mkdir($run.'/storage/'.$path, 0700, true);
     }

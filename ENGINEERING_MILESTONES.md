@@ -732,3 +732,31 @@ configuration, stories, scripts, or mandatory CI integration are shipped.
   references/anchors** valid across the two updated evidence documents, and
   **13 protected workflow/manifest/lock/guard/configuration hashes unchanged**.
   No local test rerun was substituted for the missing hosted execution.
+
+### GH-01A: Cold-checkout safety fixtures and cleanup evidence (2026-10-30)
+
+- PR #2 now contains the reviewed implementation at initial head
+  `c78737271a4ec8bc95b0735225915e6144e99ee0`. Run **41136929148** exposed three
+  safety-test failures across the SQLite, PostgreSQL and financial E2E jobs;
+  final `ci` correctly failed. The earlier blocked GH-01 preparation remains
+  historical evidence, not the current PR state.
+- Reproduced all three failures on a fresh isolated Linux filesystem: missing
+  `.phpunit.cache` parents prevented fixture creation. E2E canonical-path refusal
+  and PostgreSQL's missing-directory no-op were correct. Fixtures now assert
+  recursive setup and restore owned artifacts with `finally`; the E2E runner also
+  checks cold-start directory creation. Invocation/environment/lease guards and
+  the workflow gate are unchanged.
+- Additional regression evidence found cache cleanup could delete allowed evidence
+  before encountering an invalid entry. A full inventory preflight now rejects
+  unexpected files/directories and symlinks before deletion. New cases verify
+  successful cleanup and retention; isolated Linux symlink probes also pass.
+- Focused Windows and cold Linux checks: **85 tests / 161 assertions**;
+  configuration-only SQLite checks: **26 tests / 74 assertions**. Full validation
+  and hosted follow-up are recorded in
+  [VALIDATION.md](engineering/VALIDATION.md#gh-01a-hosted-safety-test-remediation-2026-10-30).
+  No production/development database, GitHub settings or AWS resources are changed.
+- Complete serial `composer ci:check`: **1,702 tests / 11,727 assertions**, exit 0.
+  Dependency audits and Semgrep scan/six failure probes pass. Disposable PostgreSQL
+  **18 checks / 114 assertions**, interrupted-worker probes and **five** real E2E
+  journeys pass, with verified cleanup. Hosted post-fix results remain a separate
+  acceptance step; a local Debian container is not a hosted Ubuntu pass.
