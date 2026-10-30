@@ -390,7 +390,39 @@ and passes afterward. Windows E2E safety: **28/43**; fresh Linux safety classes:
 bundled pcntl extension to exercise the actual POSIX behavior; no Composer/npm
 dependency or application runtime requirement was changed.
 
-Complete local CI is rerun after this correction. Its result and the new hosted
-run must be distinguished from the initial 1,702-test result above. The prior
-claim of unchanged workflow hashes applies to the initial fixture-only fix;
-the follow-up intentionally changes only the two PHP extension declarations.
+Final local `composer ci:check` after this correction: **exit 0, 1,703 tests /
+11,730 assertions**, including configuration-only isolation checks and every
+existing backend/frontend quality gate. The prior claim of unchanged workflow
+hashes applies to the initial fixture-only fix; the follow-up intentionally
+changes only the two PHP extension declarations. Environment files, lockfiles,
+the SQLite TestCase and financial application code remain unchanged.
+
+Published code commit `d3fbaee389b2d16ed59376622d86921e4457d7f4` was verified by
+[Ubuntu run 41142584459](https://github.com/AnirudhVijayaraghavan/aniara-intelledger/actions/runs/41142584459):
+
+| Job                   | Hosted conclusion                    |
+| --------------------- | ------------------------------------ |
+| backend-quality       | success                              |
+| frontend-quality      | success                              |
+| isolated-tests        | success                              |
+| dependency-security   | success                              |
+| source-security       | success                              |
+| secret-security       | success                              |
+| postgres-integration  | success                              |
+| financial-e2e         | success                              |
+| browser-accessibility | failure                              |
+| ci                    | failure (correct fail-closed result) |
+
+The actual Ubuntu financial-e2e job passed the configuration-only refusals,
+interrupted-child/invalid-capability probes, all browser journeys and tracked-file
+integrity check; container teardown completed. PostgreSQL integration also passed.
+The original three hosted safety-test failures and POSIX child leak are resolved.
+
+The remaining browser failure is again **89/90 passed**, the same serious
+`color-contrast` result in WebKit/dark reflow at
+`tests/Browser/accessibility.spec.ts:242`. Repetition is evidence for investigation,
+not permission to rerun until green, relax axe, skip WebKit or change unrelated
+components under this safety-test task. GH-01's complete hosted-green acceptance
+remains blocked on that separately scoped accessibility finding. Evidence-only
+documentation commits following the named code commit do not imply a new hosted
+pass; always inspect the exact run/SHA before enforcing repository protection.

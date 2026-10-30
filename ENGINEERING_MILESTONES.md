@@ -771,3 +771,13 @@ configuration, stories, scripts, or mandatory CI integration are shipped.
   (**89/90 component tests passed**), separately tracked without suppression or
   unrelated UI changes. Final local/hosted follow-up is recorded in VALIDATION;
   do not conflate the original three fixed assertions with these later failures.
+- Final corrected code `d3fbaee` / Ubuntu run **41142584459**: original three jobs
+  now **success**, including actual interrupted-worker and financial E2E probes.
+  **Eight of nine** validation jobs pass; repeated WebKit/dark reflow contrast
+  failure (**89/90**) keeps browser-accessibility and final `ci` red. No bypass
+  was introduced. Hosted-green GH-01 closure remains blocked on that separate
+  accessibility investigation; GH-01A's safety fixes are verified.
+- Final local `composer ci:check`: **1,703 tests / 11,730 assertions**, exit 0.
+  Environment, locks and SQLite guard remain unchanged; the only workflow edits
+  declare `pcntl` for the two affected test jobs. See VALIDATION for exact code
+  SHAs, run URLs, local Linux reproduction and cleanup evidence.
