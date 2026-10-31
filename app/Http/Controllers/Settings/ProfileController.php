@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Actions\Fortify\DeleteUser;
+use App\Http\AuthenticatedUserResolver;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,13 +15,17 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
+    public function __construct(private AuthenticatedUserResolver $authenticatedUser) {}
+
     /**
      * Show the user's profile settings page.
      */
     public function edit(Request $request): Response
     {
+        $this->authenticatedUser->resolve($request);
+
         return Inertia::render('settings/profile', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => true,
             'status' => $request->session()->get('status'),
         ]);
     }
@@ -31,13 +35,14 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $this->authenticatedUser->resolve($request);
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
 
@@ -49,7 +54,7 @@ class ProfileController extends Controller
      */
     public function destroy(ProfileDeleteRequest $request, DeleteUser $deleteUser): RedirectResponse
     {
-        $deleteUser->handle($request->user());
+        $deleteUser->handle($this->authenticatedUser->resolve($request));
 
         Auth::logout();
 

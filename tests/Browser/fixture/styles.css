@@ -1,0 +1,7 @@
+@import '../../../resources/css/app.css';
+@source './main.tsx';
+@source '../../../resources/js/components';
+
+html {
+    font-family: var(--font-sans);
+}

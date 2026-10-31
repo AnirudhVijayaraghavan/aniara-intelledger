@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\FinancialAccountType;
 use App\Models\AccountBalance;
 use Brick\Math\Exception\RoundingNecessaryException;
@@ -35,3 +37,7 @@ test('balance values retain exact maximum precision before persistence', functio
 
     expect($balance->amount)->toBe('9999999999999999.99999999');
 });
+
+test('strict financial callers reject scalar coercion before account contribution arithmetic', function (mixed $amount) {
+    expect(fn () => FinancialAccountType::Checking->netWorthContribution($amount))->toThrow(TypeError::class);
+})->with(['integer' => 100, 'float' => 0.1, 'boolean' => true]);

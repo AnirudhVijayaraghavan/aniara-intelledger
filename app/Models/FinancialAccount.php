@@ -33,6 +33,24 @@ class FinancialAccount extends Model
     /** @use HasFactory<FinancialAccountFactory> */
     use HasFactory;
 
+    /** @param array<string, mixed> $options */
+    public function save(array $options = []): bool
+    {
+        if (! $this->exists || ! $this->isDirty(['currency_code', 'type'])) {
+            return parent::save($options);
+        }
+
+        return $this->getConnection()->transaction(function () use ($options): bool {
+            Team::query()->whereKey($this->team_id)->lockForUpdate()->firstOrFail();
+            $stored = static::query()->whereKey($this->id)->lockForUpdate()->firstOrFail();
+            if ($stored->currency_code !== $this->getRawOriginal('currency_code') || $stored->type->value !== $this->getRawOriginal('type')) {
+                throw new DomainException('Reload the account before changing its currency or type.');
+            }
+
+            return parent::save($options);
+        });
+    }
+
     protected static function booted(): void
     {
         static::updating(function (FinancialAccount $account): void {
@@ -40,11 +58,11 @@ class FinancialAccount extends Model
                 throw new DomainException('Financial accounts cannot be moved between teams.');
             }
 
-            if ($account->isDirty(['currency_code', 'type']) && $account->balances()->exists()) {
+            if ($account->isDirty(['currency_code', 'type']) && $account->hasFinancialHistory()) {
                 $originalType = FinancialAccountType::from($account->getRawOriginal('type'));
 
                 if ($account->isDirty('currency_code') || $originalType->isLiability() !== $account->type->isLiability()) {
-                    throw new DomainException('Currency and asset/liability classification cannot change after balances have been recorded.');
+                    throw new DomainException('Currency and asset/liability classification cannot change after financial history has been recorded.');
                 }
             }
         });
@@ -78,6 +96,47 @@ class FinancialAccount extends Model
     public function balances(): HasMany
     {
         return $this->hasMany(AccountBalance::class);
+    }
+
+    /** @return HasMany<AccountTransaction, $this> */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(AccountTransaction::class);
+    }
+
+    /** @return HasMany<TransactionImportBatch, $this> */
+    public function transactionImportBatches(): HasMany
+    {
+        return $this->hasMany(TransactionImportBatch::class);
+    }
+
+    /** @return HasMany<TransactionImportRow, $this> */
+    public function transactionImportRows(): HasMany
+    {
+        return $this->hasMany(TransactionImportRow::class);
+    }
+
+    /** @return HasMany<TransactionSourceReference, $this> */
+    public function transactionSourceReferences(): HasMany
+    {
+        return $this->hasMany(TransactionSourceReference::class);
+    }
+
+    /** @return HasMany<TransactionTransfer, $this> */
+    public function outgoingTransfers(): HasMany
+    {
+        return $this->hasMany(TransactionTransfer::class, 'source_account_id');
+    }
+
+    /** @return HasMany<TransactionTransfer, $this> */
+    public function incomingTransfers(): HasMany
+    {
+        return $this->hasMany(TransactionTransfer::class, 'destination_account_id');
+    }
+
+    public function hasFinancialHistory(): bool
+    {
+        return $this->balances()->exists() || $this->transactions()->exists();
     }
 
     /** @return HasMany<FinancialAccountOwner, $this> */

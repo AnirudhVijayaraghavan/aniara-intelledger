@@ -1,0 +1,178 @@
+# Project-owned CE rules. Each rule has isolated positive and negative probes.
+rules:
+    - id: il.php.request-sql
+      languages: [php]
+      severity: ERROR
+      message: Bind request values as SQL parameters; never interpolate SQL.
+      mode: taint
+      pattern-sources: &php-request
+          - pattern: $_GET[$KEY]
+          - pattern: $_POST[$KEY]
+          - pattern: $_REQUEST[$KEY]
+          - pattern: request(...)
+          - pattern: $request->input(...)
+          - pattern: $request->query(...)
+      pattern-sinks:
+          - patterns:
+                - pattern-either:
+                      - pattern: DB::select($SQL, ...)
+                      - pattern: DB::statement($SQL, ...)
+                      - pattern: DB::unprepared($SQL, ...)
+                      - pattern: DB::raw($SQL)
+                      - pattern: Illuminate\Support\Facades\DB::select($SQL, ...)
+                      - pattern: Illuminate\Support\Facades\DB::statement($SQL, ...)
+                      - pattern: Illuminate\Support\Facades\DB::unprepared($SQL, ...)
+                      - pattern: Illuminate\Support\Facades\DB::raw($SQL)
+                      - pattern: $QUERY->whereRaw($SQL, ...)
+                      - pattern: $QUERY->selectRaw($SQL, ...)
+                      - pattern: $QUERY->orderByRaw($SQL, ...)
+                - focus-metavariable: $SQL
+    - id: il.php.request-command
+      languages: [php]
+      severity: ERROR
+      message: Do not pass request data to a shell command.
+      mode: taint
+      pattern-sources: *php-request
+      pattern-sinks:
+          - pattern-either:
+                - pattern: exec($COMMAND, ...)
+                - pattern: system($COMMAND, ...)
+                - pattern: shell_exec($COMMAND)
+                - pattern: passthru($COMMAND, ...)
+                - pattern: popen($COMMAND, ...)
+                - pattern: proc_open($COMMAND, ...)
+    - id: il.php.request-unserialize
+      languages: [php]
+      severity: ERROR
+      message: Do not deserialize PHP objects from request input.
+      mode: taint
+      pattern-sources: *php-request
+      pattern-sinks:
+          - pattern: unserialize($DATA, ...)
+    - id: il.php.request-file
+      languages: [php]
+      severity: ERROR
+      message: Validate and constrain request-controlled filesystem paths.
+      mode: taint
+      pattern-sources: *php-request
+      pattern-sinks:
+          - patterns:
+                - pattern-either:
+                      - pattern: file_get_contents($PATH, ...)
+                      - pattern: file_put_contents($PATH, ...)
+                      - pattern: fopen($PATH, ...)
+                      - pattern: unlink($PATH, ...)
+                      - pattern: include $PATH
+                      - pattern: require $PATH
+                - focus-metavariable: $PATH
+    - id: il.php.request-ssrf
+      languages: [php]
+      severity: ERROR
+      message: Constrain outbound destinations independently of request input.
+      mode: taint
+      pattern-sources: *php-request
+      pattern-sinks:
+          - patterns:
+                - pattern-either:
+                      - pattern: Http::get($URL, ...)
+                      - pattern: Http::post($URL, ...)
+                      - pattern: Illuminate\Support\Facades\Http::get($URL, ...)
+                      - pattern: Illuminate\Support\Facades\Http::post($URL, ...)
+                      - pattern: curl_setopt($HANDLE, CURLOPT_URL, $URL)
+                - focus-metavariable: $URL
+    - id: il.php.request-redirect
+      languages: [php]
+      severity: ERROR
+      message: Redirect to a trusted named route or validated local destination.
+      mode: taint
+      pattern-sources: *php-request
+      pattern-sanitizers:
+          - pattern: route(...)
+      pattern-sinks:
+          - pattern-either:
+                - pattern: redirect($URL)
+                - pattern: redirect()->away($URL, ...)
+                - pattern: redirect()->to($URL, ...)
+    - id: il.php.disabled-tls
+      languages: [php]
+      severity: ERROR
+      message: Keep TLS certificate verification enabled.
+      pattern-either:
+          - pattern: $CLIENT->withoutVerifying(...)
+          - pattern: Http::withoutVerifying(...)
+          - pattern: curl_setopt($HANDLE, CURLOPT_SSL_VERIFYPEER, false)
+          - pattern: curl_setopt($HANDLE, CURLOPT_SSL_VERIFYHOST, 0)
+    - id: il.php.request-html
+      languages: [php]
+      severity: ERROR
+      message: Escape request values before writing HTML output.
+      mode: taint
+      pattern-sources: *php-request
+      pattern-sanitizers:
+          - pattern: htmlspecialchars(...)
+          - pattern: htmlentities(...)
+          - pattern: e(...)
+      pattern-sinks:
+          - pattern: echo $HTML;
+    - id: il.php.weak-password-hash
+      languages: [php]
+      severity: ERROR
+      message: Use Laravel password hashing for passwords.
+      patterns:
+          - pattern-either:
+                - pattern: md5($PASSWORD)
+                - pattern: sha1($PASSWORD)
+          - metavariable-regex:
+                metavariable: $PASSWORD
+                regex: (?i).*\b(password|passwd)\b.*
+    - id: il.js.dynamic-code
+      languages: [javascript, typescript]
+      severity: ERROR
+      message: Do not evaluate dynamically constructed JavaScript.
+      pattern-either:
+          - pattern: eval(...)
+          - pattern: new Function(...)
+    - id: il.js.dom-xss
+      languages: [javascript, typescript]
+      severity: ERROR
+      message: Do not send browser-controlled data to HTML rendering sinks.
+      mode: taint
+      pattern-sources:
+          - pattern: location.search
+          - pattern: location.hash
+          - pattern: window.location.search
+          - pattern: window.location.hash
+          - pattern: $EVENT.target.value
+          - pattern: $EVENT.data
+      pattern-sinks:
+          - pattern: $ELEMENT.innerHTML = $HTML
+          - pattern: document.write(...)
+          - pattern: '< $TAG ... dangerouslySetInnerHTML={{__html: $HTML}} ... />'
+    - id: il.js.disabled-tls
+      languages: [javascript, typescript]
+      severity: ERROR
+      message: Do not disable TLS verification in Node clients.
+      pattern-either:
+          - pattern: 'new $HTTPS.Agent({..., rejectUnauthorized: false, ...})'
+          - pattern: process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+    - id: il.workflow.untrusted-shell
+      languages: [yaml]
+      severity: ERROR
+      message: Bind untrusted GitHub event values through environment variables.
+      patterns:
+          - pattern: 'run: $COMMAND'
+          - metavariable-regex:
+                metavariable: $COMMAND
+                regex: '(?s).*\$\{\{\s*github\.(head_ref|event\.(pull_request\.(title|body|head\.ref)|issue\.(title|body)|comment\.body|head_commit\.message))\b.*'
+    - id: il.workflow.write-all
+      languages: [yaml]
+      severity: ERROR
+      message: Grant individual workflow permissions explicitly.
+      pattern: 'permissions: write-all'
+    - id: il.blade.unescaped
+      languages: [generic]
+      severity: ERROR
+      message: Review raw Blade output; escaped interpolation is the default.
+      paths:
+          include: ['*.blade.php']
+      pattern: '{!! $...HTML !!}'

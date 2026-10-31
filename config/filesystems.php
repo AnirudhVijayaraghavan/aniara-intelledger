@@ -30,6 +30,16 @@ return [
 
     'disks' => [
 
+        'transaction_imports' => [
+            'driver' => 'local',
+            'root' => storage_path('app/transaction-imports-private'),
+            'serve' => false,
+            'visibility' => 'private',
+            'permissions' => ['file' => ['private' => 0600], 'dir' => ['private' => 0700]],
+            'throw' => true,
+            'report' => false,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

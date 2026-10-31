@@ -1,38 +1,460 @@
 name: tests
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+    push:
+        branches:
+            - main
+    pull_request:
 
 permissions:
-  contents: read
+    contents: read
+
+env:
+    PHP_VERSION: '8.4'
+    NODE_VERSION: '24'
+    NPM_VERSION: '12.2.0'
 
 jobs:
-  ci:
-    runs-on: ubuntu-latest
+    backend-quality:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
-        with:
-          php-version: '8.4'
-          tools: composer:v2
-          coverage: none
+            - name: Setup PHP
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+              with:
+                  php-version: ${{ env.PHP_VERSION }}
+                  tools: composer:v2
+                  coverage: none
+                  extensions: mbstring, pdo_sqlite, sqlite3
 
-      - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '22'
+            - name: Install locked PHP dependencies without application scripts
+              run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
 
-      - name: Setup Application
-        run: composer setup
+            - name: Check backend quality
+              run: composer quality:backend
 
-      - name: Run CI Checks
-        run: composer ci:check
+            - name: Verify tracked files were not changed
+              if: always()
+              run: git diff --exit-code HEAD
+
+    frontend-quality:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup PHP for Wayfinder
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+              with:
+                  php-version: ${{ env.PHP_VERSION }}
+                  tools: composer:v2
+                  coverage: none
+                  extensions: mbstring, pdo_sqlite, sqlite3
+
+            - name: Setup Node
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+
+            - name: Select declared npm version
+              run: npm install --global "npm@$NPM_VERSION"
+
+            - name: Install locked dependencies without application scripts
+              run: |
+                  composer install --no-interaction --prefer-dist --no-progress --no-scripts
+                  npm ci --no-audit --no-fund
+
+            - name: Check frontend quality and build
+              run: composer quality:frontend
+
+            - name: Verify tracked files were not changed
+              if: always()
+              run: git diff --exit-code HEAD
+
+    browser-accessibility:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        env:
+            NODE_OPTIONS: '--max-old-space-size=512 --max-semi-space-size=4'
+            ROLLDOWN_WORKER_THREADS: '1'
+            RAYON_NUM_THREADS: '1'
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup Node
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+
+            - name: Select declared npm version
+              run: npm install --global "npm@$NPM_VERSION"
+
+            - name: Install locked JavaScript dependencies
+              run: npm ci --no-audit --no-fund
+
+            - name: Install lockfile-pinned Chromium Firefox WebKit and system dependencies
+              run: node node_modules/@playwright/test/cli.js install --with-deps chromium firefox webkit
+
+            - name: Check synthetic components with Playwright and axe
+              run: npm run test:browser
+
+            - name: Verify accessibility violations fail the browser command
+              run: npm run test:browser:probe
+
+            - name: Verify tracked files were not changed
+              if: always()
+              run: git diff --exit-code HEAD
+
+    isolated-tests:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+              with:
+                  php-version: ${{ env.PHP_VERSION }}
+                  tools: composer:v2
+                  coverage: none
+                  extensions: mbstring, pdo_sqlite, sqlite3, pcntl
+
+            - name: Setup Node
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+
+            - name: Select declared npm version
+              run: npm install --global "npm@$NPM_VERSION"
+
+            - name: Install locked dependencies without application scripts
+              run: |
+                  composer install --no-interaction --prefer-dist --no-progress --no-scripts
+                  npm ci --no-audit --no-fund
+
+            - name: Verify configuration-only isolation tests
+              run: composer test:isolation
+
+            - name: Build isolated test assets
+              run: composer frontend:build
+
+            - name: Run complete isolated Pest suite
+              run: composer test:isolated
+
+            - name: Verify tracked files were not changed
+              if: always()
+              run: git diff --exit-code HEAD
+
+    dependency-security:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+              with:
+                  php-version: ${{ env.PHP_VERSION }}
+                  tools: composer:v2
+                  coverage: none
+                  extensions: mbstring, pdo_sqlite, sqlite3
+
+            - name: Setup Node
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+
+            - name: Select declared npm version
+              run: npm install --global "npm@$NPM_VERSION"
+
+            - name: Install locked PHP dependencies without application scripts
+              run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+
+            - name: Audit locked Composer and npm dependencies
+              run: composer security:check
+
+            - name: Verify tracked files were not changed
+              if: always()
+              run: git diff --exit-code HEAD
+
+    source-security:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+              with:
+                  php-version: ${{ env.PHP_VERSION }}
+                  tools: composer:v2
+                  coverage: none
+                  extensions: mbstring, pdo_sqlite, sqlite3
+
+            - name: Setup Python for the pinned local scanner
+              uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+              with:
+                  python-version: '3.11'
+
+            - name: Install locked PHP dependencies without application scripts
+              run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+
+            - name: Install the pinned scanner in its isolated environment
+              run: |
+                  python -m venv .phpunit.cache/semgrep-venv
+                  .phpunit.cache/semgrep-venv/bin/python -m pip install --disable-pip-version-check -r semgrep-requirements.txt
+                  .phpunit.cache/semgrep-venv/bin/python -m pip check
+
+            - name: Check source security and rule failure probes
+              run: composer source:check
+
+            - name: Verify tracked files were not changed
+              if: always()
+              run: git diff --exit-code HEAD
+
+    secret-security:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        steps:
+            - name: Checkout complete available history
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+                  fetch-depth: 0
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+              with:
+                  php-version: ${{ env.PHP_VERSION }}
+                  tools: composer:v2
+                  coverage: none
+                  extensions: mbstring, pdo_sqlite, sqlite3
+
+            - name: Setup Python for the standalone secret scanner
+              uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+              with:
+                  python-version: '3.11'
+
+            - name: Install locked PHP dependencies without application scripts
+              run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+
+            - name: Install checksum-pinned scanner and provider rules
+              run: composer secret:install
+
+            - name: Check tree, complete history, and failure probes
+              run: composer secret:check
+
+            - name: Verify tracked files were not changed
+              if: always()
+              run: git diff --exit-code HEAD
+
+    postgres-integration:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        env:
+            APP_ENV: testing
+            INTELLEDGER_PG_INTEGRATION: disposable-postgresql-only
+            PG_TEST_HOST: 127.0.0.1
+            PG_TEST_PORT: '65432'
+            PG_TEST_DATABASE: intelledger_ci_bootstrap
+            PG_TEST_USERNAME: intelledger_ci
+            PG_TEST_PASSWORD: ci-only
+
+        services:
+            postgres:
+                image: postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8
+                env:
+                    POSTGRES_DB: intelledger_ci_bootstrap
+                    POSTGRES_USER: intelledger_ci
+                    POSTGRES_PASSWORD: ci-only
+                ports:
+                    - '65432:5432'
+                options: >-
+                    --health-cmd "pg_isready -U intelledger_ci -d intelledger_ci_bootstrap"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup PHP with isolated database drivers
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+              with:
+                  php-version: ${{ env.PHP_VERSION }}
+                  tools: composer:v2
+                  coverage: none
+                  extensions: mbstring, pdo_pgsql, pdo_sqlite, sqlite3
+
+            - name: Install locked PHP dependencies without application scripts
+              run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+
+            - name: Verify unchanged SQLite isolation protections
+              run: composer test:isolation
+
+            - name: Verify PostgreSQL configuration-only rejection probes
+              run: composer postgres:guard
+
+            - name: Run guarded disposable PostgreSQL integration tests
+              run: composer test:postgres
+
+            - name: Verify tracked files were not changed
+              if: always()
+              run: git diff --exit-code HEAD
+
+    financial-e2e:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        env:
+            APP_ENV: testing
+            INTELLEDGER_PG_INTEGRATION: disposable-postgresql-only
+            INTELLEDGER_FINANCIAL_E2E: disposable-financial-e2e-only
+            PG_TEST_HOST: 127.0.0.1
+            PG_TEST_PORT: '65432'
+            PG_TEST_DATABASE: intelledger_ci_bootstrap
+            PG_TEST_USERNAME: intelledger_ci
+            PG_TEST_PASSWORD: ci-only
+
+        services:
+            postgres:
+                image: postgres:18.6-bookworm@sha256:5c4783a8cc3f0074912164f94dfa1be4e043438f0f707cf968d7af9a0d31a2c8
+                env:
+                    POSTGRES_DB: intelledger_ci_bootstrap
+                    POSTGRES_USER: intelledger_ci
+                    POSTGRES_PASSWORD: ci-only
+                ports:
+                    - '65432:5432'
+                options: >-
+                    --health-cmd "pg_isready -U intelledger_ci -d intelledger_ci_bootstrap"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup PHP with isolated database drivers
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+              with:
+                  php-version: ${{ env.PHP_VERSION }}
+                  tools: composer:v2
+                  coverage: none
+                  extensions: mbstring, pdo_pgsql, pdo_sqlite, sqlite3, sodium, pcntl
+
+            - name: Setup Node
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+
+            - name: Select declared npm version
+              run: npm install --global "npm@$NPM_VERSION"
+
+            - name: Install locked dependencies without application scripts
+              run: |
+                  composer install --no-interaction --prefer-dist --no-progress --no-scripts
+                  npm ci --no-audit --no-fund
+
+            - name: Verify configuration-only E2E and PostgreSQL refusals
+              run: |
+                  composer e2e:guard
+                  composer postgres:guard
+
+            - name: Build production assets in the existing SQLite-isolated context
+              run: composer frontend:build
+
+            - name: Install lockfile-pinned Chromium and system libraries
+              run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+
+            - name: Verify lease refusals and interrupted HTTP child cleanup
+              run: composer test:e2e:probe
+
+            - name: Run guarded financial browser journeys
+              run: npm run test:e2e
+
+            - name: Verify tracked files were not changed
+              if: always()
+              run: git diff --exit-code HEAD
+
+    # Keep the existing "ci" required-check name while the jobs remain independent.
+    ci:
+        if: always()
+        needs:
+            [
+                backend-quality,
+                frontend-quality,
+                isolated-tests,
+                dependency-security,
+                source-security,
+                secret-security,
+                postgres-integration,
+                browser-accessibility,
+                financial-e2e,
+            ]
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - name: Setup PHP for the status gate
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+              with:
+                  php-version: ${{ env.PHP_VERSION }}
+                  coverage: none
+
+            - name: Require every quality job to succeed
+              env:
+                  BACKEND_RESULT: ${{ needs.backend-quality.result }}
+                  FRONTEND_RESULT: ${{ needs.frontend-quality.result }}
+                  TEST_RESULT: ${{ needs.isolated-tests.result }}
+                  SECURITY_RESULT: ${{ needs.dependency-security.result }}
+                  SOURCE_RESULT: ${{ needs.source-security.result }}
+                  SECRET_RESULT: ${{ needs.secret-security.result }}
+                  POSTGRES_RESULT: ${{ needs.postgres-integration.result }}
+                  BROWSER_RESULT: ${{ needs.browser-accessibility.result }}
+                  E2E_RESULT: ${{ needs.financial-e2e.result }}
+              run: |
+                  php -d memory_limit=64M -r '
+                  foreach (["BACKEND_RESULT", "FRONTEND_RESULT", "TEST_RESULT", "SECURITY_RESULT", "SOURCE_RESULT", "SECRET_RESULT", "POSTGRES_RESULT", "BROWSER_RESULT", "E2E_RESULT"] as $name) {
+                      if (getenv($name) !== "success") {
+                          fwrite(STDERR, "Required CI job did not succeed: ".$name.PHP_EOL);
+                          exit(1);
+                      }
+                  }
+                  exit(0);
+                  '

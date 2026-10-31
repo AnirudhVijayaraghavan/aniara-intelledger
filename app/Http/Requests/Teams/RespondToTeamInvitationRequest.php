@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Teams;
 
+use App\Http\AuthenticatedUserResolver;
 use App\Rules\ValidTeamInvitation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -13,10 +14,10 @@ class RespondToTeamInvitationRequest extends FormRequest
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    public function rules(AuthenticatedUserResolver $authenticatedUser): array
     {
         return [
-            'invitation' => ['required', new ValidTeamInvitation($this->user())],
+            'invitation' => ['required', new ValidTeamInvitation($authenticatedUser->resolve($this))],
         ];
     }
 

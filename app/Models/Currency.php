@@ -33,6 +33,18 @@ class Currency extends Model
         return $this->hasMany(FinancialAccount::class, 'currency_code', 'code');
     }
 
+    /** @return HasMany<ExchangeRate, $this> */
+    public function baseExchangeRates(): HasMany
+    {
+        return $this->hasMany(ExchangeRate::class, 'base_currency_code', 'code');
+    }
+
+    /** @return HasMany<ExchangeRate, $this> */
+    public function quotedExchangeRates(): HasMany
+    {
+        return $this->hasMany(ExchangeRate::class, 'quote_currency_code', 'code');
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

@@ -115,6 +115,11 @@
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.d.ts",
-        "resources/js/**/*.tsx"
+        "resources/js/**/*.tsx",
+        "playwright.config.ts",
+        "playwright.e2e.config.ts",
+        "tests/E2E/**/*.ts",
+        "tests/Browser/**/*.ts",
+        "tests/Browser/**/*.tsx"
     ]
 }

@@ -1,0 +1,15 @@
+# Explicit targets are enumerated and their scan coverage verified by the runner.
+# No application-owned test/UI source exclusions. Dependencies and generated code:
+/vendor/
+/node_modules/
+/.phpunit.cache/
+/storage/
+/public/build/
+/bootstrap/cache/
+/bootstrap/ssr/
+/resources/js/actions/
+/resources/js/routes/
+/resources/js/wayfinder/
+# Override Semgrep's default test/hidden-directory exclusions.
+!tests/
+!.github/

@@ -12,7 +12,6 @@ import ManagePasskeys from '@/components/manage-passkeys';
 import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
 import ManageTwoFactor from '@/components/manage-two-factor';
 
-// oxfmt-ignore
 type Props = {
     passwordRules: string;
 } & ManagePasskeysProps &

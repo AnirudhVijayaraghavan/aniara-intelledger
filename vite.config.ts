@@ -40,14 +40,17 @@ export default defineConfig({
         },
     },
     lint: {
+        plugins: ['unicorn', 'typescript', 'oxc', 'react'],
+        rules: {
+            'react/rules-of-hooks': 'error',
+            'react/exhaustive-deps': 'error',
+        },
         ignorePatterns: [
             'vendor/**',
             'node_modules/**',
-            'public/**',
+            'public/build/**',
             'bootstrap/ssr/**',
-            'tailwind.config.js',
             'resources/js/actions/**',
-            'resources/js/components/ui/*',
             'resources/js/routes/**',
             'resources/js/wayfinder/**',
         ],
@@ -63,12 +66,6 @@ export default defineConfig({
         semi: true,
         singleAttributePerLine: false,
         htmlWhitespaceSensitivity: 'css',
-        ignorePatterns: [
-            '.github/**',
-            'composer.json',
-            'resources/js/components/ui/*',
-            'resources/views/mail/*',
-        ],
         sortTailwindcss: {
             functions: ['clsx', 'cn', 'cva'],
             stylesheet: 'resources/css/app.css',

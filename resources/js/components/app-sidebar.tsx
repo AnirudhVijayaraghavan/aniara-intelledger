@@ -1,5 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Wallet } from 'lucide-react';
+import {
+    ArrowLeftRight,
+    BarChart3,
+    LayoutGrid,
+    List,
+    Wallet,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppVersion from '@/components/app-version';
 import { NavMain } from '@/components/nav-main';
@@ -16,6 +22,9 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { index as accountsIndex } from '@/routes/accounts';
+import { index as ratesIndex } from '@/routes/exchange-rates';
+import { index as activityIndex } from '@/routes/financial-activity';
+import { index as transactionsIndex } from '@/routes/transactions';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -37,6 +46,21 @@ export function AppSidebar() {
             title: 'Accounts',
             href: accountsIndex(page.props.currentTeam.slug),
             icon: Wallet,
+        });
+        mainNavItems.push({
+            title: 'FX rates',
+            href: ratesIndex(page.props.currentTeam.slug),
+            icon: ArrowLeftRight,
+        });
+        mainNavItems.push({
+            title: 'Transactions',
+            href: transactionsIndex(page.props.currentTeam.slug),
+            icon: List,
+        });
+        mainNavItems.push({
+            title: 'Spending & Income',
+            href: activityIndex(page.props.currentTeam.slug),
+            icon: BarChart3,
         });
     }
 

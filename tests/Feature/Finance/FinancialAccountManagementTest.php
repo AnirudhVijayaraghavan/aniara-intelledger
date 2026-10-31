@@ -7,6 +7,8 @@ use App\Models\FinancialAccountOwner;
 use App\Models\FinancialInstitution;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Exceptions;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -363,4 +365,52 @@ test('a failed holder write rolls back account changes and inline institution cr
     $this->assertDatabaseMissing('financial_accounts', ['id' => $account->id, 'name' => 'Must roll back']);
     $this->assertDatabaseMissing('financial_institutions', ['name' => 'Must roll back bank']);
     expect($account->owners()->count())->toBe(1);
+});
+
+test('a retained holder disappearing after validation rolls back every account edit and permits a clean retry', function () {
+    $actor = User::factory()->create();
+    $team = $actor->personalTeam();
+    $account = FinancialAccount::factory()->create(['team_id' => $team->id]);
+    $first = $account->owners()->sole();
+    $first->update(['user_id' => $actor->id]);
+    $second = FinancialAccountOwner::factory()->create(['financial_account_id' => $account->id, 'team_id' => $team->id]);
+    $balance = AccountBalance::factory()->create(['financial_account_id' => $account->id, 'amount' => '100.12345678']);
+    $beforeAccount = $account->fresh()->getAttributes();
+    $beforeOwners = DB::table('financial_account_owners')->orderBy('id')->get()->toArray();
+    $beforeBalance = $balance->fresh()->getAttributes();
+    $input = manualAccountPayload($account);
+    $input['name'] = 'Accepted after retry';
+    $input['type'] = $account->type->value;
+    $input['institution'] = ['name' => 'Retry bank'];
+    $input['owners'] = [
+        ['id' => $first->id, 'owner_name' => 'Corrected first holder', 'user_id' => $actor->id],
+        ['id' => $second->id, 'owner_name' => $second->owner_name, 'user_id' => null],
+    ];
+    $parameters = ['current_team' => $team->slug, 'financial_account' => $account->id];
+    $event = 'eloquent.updated: '.FinancialAccount::class;
+    Event::listen($event, function (FinancialAccount $updated) use ($account, $second): void {
+        if ($updated->id === $account->id) {
+            DB::table('financial_account_owners')->where('id', $second->id)->delete();
+        }
+    });
+
+    try {
+        $this->actingAs($actor)->put(route('accounts.update', $parameters), $input)
+            ->assertSessionHasErrors('owners.1.id');
+    } finally {
+        Event::forget($event);
+    }
+
+    expect($account->fresh()->getAttributes())->toBe($beforeAccount);
+    expect(DB::table('financial_account_owners')->orderBy('id')->get()->toArray())->toEqual($beforeOwners);
+    expect($balance->fresh()->getAttributes())->toBe($beforeBalance);
+    $this->assertDatabaseMissing('financial_institutions', ['name' => 'Retry bank']);
+
+    $this->put(route('accounts.update', $parameters), $input)->assertSessionHasNoErrors()->assertRedirect();
+
+    expect($account->fresh()->name)->toBe('Accepted after retry');
+    expect($account->owners()->orderBy('id')->pluck('id')->all())->toBe([$first->id, $second->id]);
+    expect($first->fresh()->owner_name)->toBe('Corrected first holder');
+    expect($first->fresh()->user_id)->toBe($actor->id);
+    expect($balance->fresh()->getAttributes())->toBe($beforeBalance);
 });

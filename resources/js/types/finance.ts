@@ -37,3 +37,76 @@ export type BalanceHistory = {
     last_page: number;
     total: number;
 };
+
+export type AccountNetWorthContribution = {
+    accountId: number;
+    accountName: string;
+    type: string;
+    typeLabel: string;
+    isLiability: boolean;
+    currencyCode: string;
+    archivedAt: string | null;
+    institutionId: number | null;
+    institutionName: string | null;
+    balanceObservationId: number | null;
+    balanceAsOfDate: string | null;
+    balanceRecordedAt: string | null;
+    balanceAmount: string | null;
+    netWorthContribution: string | null;
+    missingData: boolean;
+};
+
+export type CurrencyNetWorth = {
+    currencyCode: string;
+    totalAssets: string;
+    totalLiabilities: string;
+    netWorth: string;
+    assetsByAccountType: Record<string, string>;
+    liabilitiesByAccountType: Record<string, string>;
+    accounts: AccountNetWorthContribution[];
+    missingAccountIds: number[];
+    isComplete: boolean;
+};
+
+export type NetWorthOverview = {
+    teamId: number;
+    asOfDate: string;
+    currencies: Record<string, CurrencyNetWorth>;
+    isComplete: boolean;
+};
+
+export type FxQuote = {
+    fromCurrencyCode: string;
+    toCurrencyCode: string;
+    valuationAt: string;
+    rateId: number | null;
+    baseCurrencyCode: string;
+    quoteCurrencyCode: string;
+    rate: string;
+    source: string;
+    effectiveAt: string | null;
+    recordedAt: string | null;
+    isInverse: boolean;
+};
+
+export type ConsolidatedNetWorthOverview = {
+    original: NetWorthOverview;
+    reportingCurrencyCode: string;
+    valuationAt: string;
+    totalAssets: string | null;
+    totalLiabilities: string | null;
+    netWorth: string | null;
+    fxQuotes: Record<string, FxQuote>;
+    missingRateCurrencies: string[];
+    isComplete: boolean;
+};
+
+export type ExchangeRateObservation = {
+    id: number;
+    baseCurrencyCode: string;
+    quoteCurrencyCode: string;
+    rate: string;
+    effectiveAt: string;
+    recordedAt: string;
+    source: string;
+};

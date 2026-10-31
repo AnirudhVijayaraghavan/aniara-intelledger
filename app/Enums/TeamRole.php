@@ -39,7 +39,7 @@ enum TeamRole: string
      */
     public function hasPermission(TeamPermission $permission): bool
     {
-        return in_array($permission, $this->permissions());
+        return in_array($permission, $this->permissions(), true);
     }
 
     /**
