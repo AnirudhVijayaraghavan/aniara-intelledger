@@ -64,6 +64,6 @@ typing-inspection==0.4.4
 typing_extensions==4.16.0
 urllib3==2.8.0
 uvicorn==0.54.0
-wcmatch==8.5.2
+wcmatch==11.2
 wrapt==1.17.3
 zipp==4.1.2
